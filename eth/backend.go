@@ -95,6 +95,8 @@ type Ethereum struct {
 	p2pServer *p2p.Server
 
 	lock sync.RWMutex // Protects the variadic fields (e.g. gas price and etherbase)
+
+	masternodeManager *MasternodeManager
 }
 
 // New creates a new Ethereum object (including the
@@ -225,6 +227,15 @@ func New(stack *node.Node, config *ethconfig.Config) (*Ethereum, error) {
 		return nil, err
 	}
 
+	if eth.masternodeManager, err = NewMasternodeManager(eth); err != nil {
+		return nil, err
+	}
+
+	if engine, ok := eth.engine.(*clique.Clique); ok {
+		engine.SetMasternodeListFn(eth.masternodeManager.MasternodeList)
+		engine.SetInvestorFn(eth.masternodeManager.GetInvestor)
+	}
+
 	eth.miner = miner.New(eth, &config.Miner, chainConfig, eth.EventMux(), eth.engine, eth.isLocalBlock)
 	eth.miner.SetExtra(makeExtraData(config.Miner.ExtraData))
 
@@ -351,26 +362,27 @@ func (s *Ethereum) ResetWithGenesisBlock(gb *types.Block) {
 }
 
 func (s *Ethereum) Etherbase() (eb common.Address, err error) {
-	s.lock.RLock()
-	etherbase := s.etherbase
-	s.lock.RUnlock()
-
-	if etherbase != (common.Address{}) {
-		return etherbase, nil
-	}
-	if wallets := s.AccountManager().Wallets(); len(wallets) > 0 {
-		if accounts := wallets[0].Accounts(); len(accounts) > 0 {
-			etherbase := accounts[0].Address
-
-			s.lock.Lock()
-			s.etherbase = etherbase
-			s.lock.Unlock()
-
-			log.Info("Etherbase automatically configured", "address", etherbase)
-			return etherbase, nil
-		}
-	}
-	return common.Address{}, fmt.Errorf("etherbase must be explicitly specified")
+	return common.Address{}, nil
+	//s.lock.RLock()
+	//etherbase := s.etherbase
+	//s.lock.RUnlock()
+	//
+	//if etherbase != (common.Address{}) {
+	//	return etherbase, nil
+	//}
+	//if wallets := s.AccountManager().Wallets(); len(wallets) > 0 {
+	//	if accounts := wallets[0].Accounts(); len(accounts) > 0 {
+	//		etherbase := accounts[0].Address
+	//
+	//		s.lock.Lock()
+	//		s.etherbase = etherbase
+	//		s.lock.Unlock()
+	//
+	//		log.Info("Etherbase automatically configured", "address", etherbase)
+	//		return etherbase, nil
+	//	}
+	//}
+	//return common.Address{}, fmt.Errorf("etherbase must be explicitly specified")
 }
 
 // isLocalBlock checks whether the specified block is mined
@@ -465,13 +477,10 @@ func (s *Ethereum) StartMining(threads int) error {
 			log.Error("Cannot start mining without etherbase", "err", err)
 			return fmt.Errorf("etherbase missing: %v", err)
 		}
+
+		witnesses := s.masternodeManager.GetWitnesses()
 		if clique, ok := s.engine.(*clique.Clique); ok {
-			wallet, err := s.accountManager.Find(accounts.Account{Address: eb})
-			if wallet == nil || err != nil {
-				log.Error("Etherbase account unavailable locally", "err", err)
-				return fmt.Errorf("signer missing: %v", err)
-			}
-			clique.Authorize(eb, wallet.SignData)
+			clique.Authorize(witnesses, s.masternodeManager.SignHash)
 		}
 		// If mining is started, we can disable the transaction rejection mechanism
 		// introduced to speed sync times.
@@ -539,7 +548,18 @@ func (s *Ethereum) Start() error {
 	}
 	// Start the networking layer and the light server if requested
 	s.handler.Start(maxPeers)
+
+	go s.startMasternode(s.p2pServer)
+
 	return nil
+}
+
+func (s *Ethereum) startMasternode(srvr *p2p.Server) {
+	t := time.NewTimer(1 * time.Second)
+	select {
+	case <-t.C:
+		s.masternodeManager.Start(srvr, s.EventMux())
+	}
 }
 
 // Stop implements node.Lifecycle, terminating all internal goroutines used by the

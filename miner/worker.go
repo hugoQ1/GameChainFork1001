@@ -17,8 +17,8 @@
 package miner
 
 import (
-	"bytes"
 	"errors"
+	"github.com/ethereum/go-ethereum/consensus/clique"
 	"math/big"
 	"sync"
 	"sync/atomic"
@@ -306,6 +306,41 @@ func (w *worker) pendingBlockAndReceipts() (*types.Block, types.Receipts) {
 func (w *worker) start() {
 	atomic.StoreInt32(&w.running, 1)
 	w.startCh <- struct{}{}
+	go w.mineLoop()
+}
+
+func (w *worker) mineLoop() {
+	ticker := time.NewTicker(time.Second).C
+	for {
+		select {
+		case now := <-ticker:
+			w.mine(now.Unix())
+		}
+	}
+}
+
+func (w *worker) mine(now int64) {
+	engine, ok := w.engine.(*clique.Clique)
+	if !ok {
+		log.Error("Only the circum engine was allowed")
+		return
+	}
+	coinbase, err := engine.CheckWitness(w.chain.CurrentBlock(), now)
+	if err != nil {
+		switch err {
+		case clique.ErrWaitForPrevBlock,
+			clique.ErrMinerFutureBlock,
+			clique.ErrInvalidBlockWitness,
+			clique.ErrWaitForRightTime,
+			clique.ErrInvalidMinerBlockTime:
+			log.Debug("Skipped to miner the block, while ", "info", err)
+		default:
+			log.Error("Failed to miner the block", "err", err)
+		}
+		return
+	}
+	w.setEtherbase(coinbase)
+	w.commitNewWork(nil, false, now)
 }
 
 // stop sets the running status as 0.
@@ -460,8 +495,9 @@ func (w *worker) mainLoop() {
 
 	for {
 		select {
-		case req := <-w.newWorkCh:
-			w.commitNewWork(req.interrupt, req.noempty, req.timestamp)
+		case <-w.newWorkCh:
+		//case req := <-w.newWorkCh:
+		//	w.commitNewWork(req.interrupt, req.noempty, req.timestamp)
 
 		case ev := <-w.chainSideCh:
 			// Short circuit for duplicate side blocks
@@ -910,6 +946,7 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 	parent := w.chain.CurrentBlock()
 
 	if parent.Time() >= uint64(timestamp) {
+		// TODO: Fix ...
 		timestamp = int64(parent.Time() + 1)
 	}
 	num := parent.Number()
@@ -930,10 +967,10 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 	}
 	// Only set the coinbase if our consensus engine is running (avoid spurious block rewards)
 	if w.isRunning() {
-		if w.coinbase == (common.Address{}) {
-			log.Error("Refusing to mine without etherbase")
-			return
-		}
+		//if w.coinbase == (common.Address{}) {
+		//	log.Error("Refusing to mine without etherbase")
+		//	return
+		//}
 		header.Coinbase = w.coinbase
 	}
 	if err := w.engine.Prepare(w.chain, header); err != nil {
@@ -941,18 +978,18 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 		return
 	}
 	// If we are care about TheDAO hard-fork check whether to override the extra-data or not
-	if daoBlock := w.chainConfig.DAOForkBlock; daoBlock != nil {
-		// Check whether the block is among the fork extra-override range
-		limit := new(big.Int).Add(daoBlock, params.DAOForkExtraRange)
-		if header.Number.Cmp(daoBlock) >= 0 && header.Number.Cmp(limit) < 0 {
-			// Depending whether we support or oppose the fork, override differently
-			if w.chainConfig.DAOForkSupport {
-				header.Extra = common.CopyBytes(params.DAOForkBlockExtra)
-			} else if bytes.Equal(header.Extra, params.DAOForkBlockExtra) {
-				header.Extra = []byte{} // If miner opposes, don't let it use the reserved extra-data
-			}
-		}
-	}
+	//if daoBlock := w.chainConfig.DAOForkBlock; daoBlock != nil {
+	//	// Check whether the block is among the fork extra-override range
+	//	limit := new(big.Int).Add(daoBlock, params.DAOForkExtraRange)
+	//	if header.Number.Cmp(daoBlock) >= 0 && header.Number.Cmp(limit) < 0 {
+	//		// Depending whether we support or oppose the fork, override differently
+	//		if w.chainConfig.DAOForkSupport {
+	//			header.Extra = common.CopyBytes(params.DAOForkBlockExtra)
+	//		} else if bytes.Equal(header.Extra, params.DAOForkBlockExtra) {
+	//			header.Extra = []byte{} // If miner opposes, don't let it use the reserved extra-data
+	//		}
+	//	}
+	//}
 	// Could potentially happen if starting to mine in an odd state.
 	err := w.makeCurrent(parent, header)
 	if err != nil {

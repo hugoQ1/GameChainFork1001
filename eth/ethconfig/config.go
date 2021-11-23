@@ -33,7 +33,6 @@ import (
 	"github.com/ethereum/go-ethereum/eth/downloader"
 	"github.com/ethereum/go-ethereum/eth/gasprice"
 	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/miner"
 	"github.com/ethereum/go-ethereum/node"
 	"github.com/ethereum/go-ethereum/params"
@@ -71,7 +70,7 @@ var Defaults = Config{
 		DatasetsOnDisk:   2,
 		DatasetsLockMmap: false,
 	},
-	NetworkId:               1,
+	NetworkId:               100,
 	TxLookupLimit:           2350000,
 	LightPeers:              100,
 	UltraLightFraction:      75,
@@ -208,31 +207,32 @@ type Config struct {
 
 // CreateConsensusEngine creates a consensus engine for the given chain configuration.
 func CreateConsensusEngine(stack *node.Node, chainConfig *params.ChainConfig, config *ethash.Config, notify []string, noverify bool, db ethdb.Database) consensus.Engine {
-	// If proof-of-authority is requested, set it up
-	if chainConfig.Clique != nil {
-		return clique.New(chainConfig.Clique, db)
-	}
-	// Otherwise assume proof-of-work
-	switch config.PowMode {
-	case ethash.ModeFake:
-		log.Warn("Ethash used in fake mode")
-	case ethash.ModeTest:
-		log.Warn("Ethash used in test mode")
-	case ethash.ModeShared:
-		log.Warn("Ethash used in shared mode")
-	}
-	engine := ethash.New(ethash.Config{
-		PowMode:          config.PowMode,
-		CacheDir:         stack.ResolvePath(config.CacheDir),
-		CachesInMem:      config.CachesInMem,
-		CachesOnDisk:     config.CachesOnDisk,
-		CachesLockMmap:   config.CachesLockMmap,
-		DatasetDir:       config.DatasetDir,
-		DatasetsInMem:    config.DatasetsInMem,
-		DatasetsOnDisk:   config.DatasetsOnDisk,
-		DatasetsLockMmap: config.DatasetsLockMmap,
-		NotifyFull:       config.NotifyFull,
-	}, notify, noverify)
-	engine.SetThreads(-1) // Disable CPU mining
-	return engine
+	return clique.New(chainConfig.Clique, db)
+	//// If proof-of-authority is requested, set it up
+	//if chainConfig.Clique != nil {
+	//	return clique.New(chainConfig.Clique, db)
+	//}
+	//// Otherwise assume proof-of-work
+	//switch config.PowMode {
+	//case ethash.ModeFake:
+	//	log.Warn("Ethash used in fake mode")
+	//case ethash.ModeTest:
+	//	log.Warn("Ethash used in test mode")
+	//case ethash.ModeShared:
+	//	log.Warn("Ethash used in shared mode")
+	//}
+	//engine := ethash.New(ethash.Config{
+	//	PowMode:          config.PowMode,
+	//	CacheDir:         stack.ResolvePath(config.CacheDir),
+	//	CachesInMem:      config.CachesInMem,
+	//	CachesOnDisk:     config.CachesOnDisk,
+	//	CachesLockMmap:   config.CachesLockMmap,
+	//	DatasetDir:       config.DatasetDir,
+	//	DatasetsInMem:    config.DatasetsInMem,
+	//	DatasetsOnDisk:   config.DatasetsOnDisk,
+	//	DatasetsLockMmap: config.DatasetsLockMmap,
+	//	NotifyFull:       config.NotifyFull,
+	//}, notify, noverify)
+	//engine.SetThreads(-1) // Disable CPU mining
+	//return engine
 }

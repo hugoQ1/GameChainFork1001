@@ -18,11 +18,14 @@ package node
 
 import (
 	"crypto/ecdsa"
+	"encoding/hex"
 	"fmt"
+	"github.com/ethereum/go-ethereum/params"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -379,6 +382,34 @@ func (c *Config) NodeKey() *ecdsa.PrivateKey {
 		log.Error(fmt.Sprintf("Failed to persist node key: %v", err))
 	}
 	return key
+}
+
+func (c *Config) MasternodeKeys() []*ecdsa.PrivateKey {
+	privateKeys := make([]*ecdsa.PrivateKey, params.MasternodeKeyCount)
+	instanceDir := filepath.Join(c.DataDir, c.name())
+	fmt.Println("DataDir ===> ", instanceDir)
+	if err := os.MkdirAll(instanceDir, 0700); err != nil {
+		log.Error(fmt.Sprintf("[MasternodeKeys] Failed to persist node key: %v", err))
+		return privateKeys
+	}
+	prefix := c.ResolvePath(datadirPrivateKey)
+	for i := 0; i < params.MasternodeKeyCount; i++ {
+		keyfile := prefix + strconv.Itoa(i)
+		if key, err := crypto.LoadECDSA(keyfile); err == nil {
+			privateKeys[i] = key
+			continue
+		}
+		key, err := crypto.GenerateKey()
+		if err != nil {
+			log.Crit(fmt.Sprintf("Failed to generate node key%d: %v", i, err))
+		}
+		if err := crypto.SaveECDSA(keyfile, key); err != nil {
+			log.Error(fmt.Sprintf("Failed to persist node key%d: %v", i, err))
+		}
+		fmt.Println(hex.EncodeToString(crypto.FromECDSA(key)))
+		privateKeys[i] = key
+	}
+	return privateKeys
 }
 
 // StaticNodes returns a list of node enode URLs configured as static nodes.
