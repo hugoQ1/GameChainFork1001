@@ -417,7 +417,7 @@ func DefaultSepoliaGenesisBlock() *Genesis {
 }
 
 func GamechainGenesisBlock() *Genesis {
-	faucet := common.HexToAddress("0x046BC7B020dA804A2CF59c7097667cF8bB138389")
+	faucet := common.HexToAddress("0xeD420cfD2252231CD4DA070423E38eB8ae32e52C")
 
 	// Override the default period to the user requested one
 	config := *params.AllCliqueProtocolChanges
@@ -444,6 +444,7 @@ func GamechainGenesisBlock() *Genesis {
 			common.BytesToAddress([]byte{8}): {Balance: big.NewInt(1)}, // ECPairing
 			common.BytesToAddress([]byte{9}): {Balance: big.NewInt(1)}, // BLAKE2b
 			common.BytesToAddress(params.MasterndeContractAddress.Bytes()): masternodeContractAccount(params.MainnetMasternodes),
+			faucet:                           {Balance: new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))},
 		},
 	}
 }

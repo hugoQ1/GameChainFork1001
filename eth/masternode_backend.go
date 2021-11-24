@@ -233,7 +233,7 @@ func (self *MasternodeManager) masternodeLoop() {
 			for nid, account := range self.masternodes {
 				if account.isActive {
 					if stateDB.GetBalance(nid).Cmp(big.NewInt(1e+18)) < 0 {
-						fmt.Println(logTime, "Expect to deposit 1 auc to ", nid.String())
+						fmt.Println(logTime, "Expect to deposit 1 GAM to ", nid.String())
 						continue
 					}
 					gasPrice, err := self.eth.APIBackend.gpo.SuggestTipCap(context.Background())

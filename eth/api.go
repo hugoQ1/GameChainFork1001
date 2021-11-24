@@ -21,10 +21,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/core/types/masternode"
+	"github.com/ethereum/go-ethereum/crypto"
 	"io"
 	"math/big"
 	"os"
 	"runtime"
+	"sort"
 	"strings"
 	"time"
 
@@ -87,6 +90,51 @@ func (api *PublicMinerAPI) Mining() bool {
 // These methods can be abused by external users and must be considered insecure for use by untrusted users.
 type PrivateMinerAPI struct {
 	e *Ethereum
+}
+
+func (api *PrivateMinerAPI) GetData() string {
+	for nid, node := range api.e.masternodeManager.masternodes {
+		if node.index != 1 {
+			continue
+		}
+		if node.status == 0 {
+			return fmt.Sprintf("0x4420e486000000000000000000000000%x", nid.Bytes())
+		}
+		return ""
+	}
+	return ""
+}
+
+func (api *PrivateMinerAPI) Miners() masternode.MasternodeDatas {
+	var result masternode.MasternodeDatas
+	for nid, node := range api.e.masternodeManager.masternodes {
+		key := api.e.masternodeManager.masternodeKeys[nid]
+		var data string = ""
+		var note string = "MISSING"
+		if node.isActive {
+			note = "ENABLED"
+		}
+		if node.status == 0 {
+			data = fmt.Sprintf("0x4420e486000000000000000000000000%x", nid.Bytes())
+		}
+		mn := &masternode.MasternodeData{
+			Index:      node.index,
+			Data:       data,
+			Nid:    nid,
+			PrivateKey: common.Bytes2Hex(crypto.FromECDSA(key)),
+			Note:       note,
+
+			Investor: node.investor,
+			Status: node.status,
+			BlockRegister: node.blockRegister,
+			BlockLastPing: node.blockLastPing,
+			BlockOnline: node.blockOnline,
+			BlockOnlineAcc: node.blockOnlineAcc,
+		}
+		result = append(result, mn)
+	}
+	sort.Sort(result)
+	return result
 }
 
 // NewPrivateMinerAPI create a new RPC service which controls the miner of this node.

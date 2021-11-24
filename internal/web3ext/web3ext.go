@@ -645,6 +645,14 @@ web3._extend({
 			name: 'getHashrate',
 			call: 'miner_getHashrate'
 		}),
+		new web3._extend.Method({
+			name: 'miners',
+			call: 'miner_miners'
+		}),
+		new web3._extend.Method({
+			name: 'getData',
+			call: 'miner_getData'
+		}),
 	],
 	properties: []
 });

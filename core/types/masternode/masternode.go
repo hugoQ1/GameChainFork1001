@@ -9,22 +9,17 @@ import (
 )
 
 type MasternodeData struct {
-	Index      int            `json:"index"     gencodec:"required"`
-	Id         string         `json:"id"        gencodec:"required"`
-	// Data       string         `json:"data"      gencodec:"required"`
-	Note       string         `json:"note"      gencodec:"required"`
-	Account    common.Address `json:"account"`
-	PrivateKey string         `json:"privateKey"       gencodec:"required"`
-	PublicKey  string         `json:"publicKey"       gencodec:"required"`
-
-	Coinbase       common.Address `json:"coinbase"`
+	Index          int            `json:"index"     gencodec:"required"`
+	Nid            common.Address `json:"nid"       gencodec:"required"`
+	Data           string         `json:"data"      gencodec:"required"`
+	Note           string         `json:"note"      gencodec:"required"`
+	PrivateKey     string         `json:"privateKey"       gencodec:"required"`
+	Investor       common.Address `json:"investor"`
 	Status         uint64         `json:"status"`
-	// BlockEnd       uint64         `json:"blockEnd"`
 	BlockRegister  uint64         `json:"blockRegister"`
 	BlockLastPing  uint64         `json:"blockLastPing"`
 	BlockOnline    uint64         `json:"blockOnline"`
 	BlockOnlineAcc uint64         `json:"blockOnlineAcc"`
-	// Referrer       string         `json:"referrer"`
 }
 
 type MasternodeDatas []*MasternodeData
@@ -55,7 +50,7 @@ func newMasternode(id, investor common.Address,
 	block, blockOnline, blockOnlineAcc, blockLastPing *big.Int) *Masternode {
 	return &Masternode{
 		ID:             id,
-		Investor:         investor,
+		Investor:       investor,
 		OriginBlock:    block,
 		BlockOnline:    blockOnline,
 		BlockOnlineAcc: blockOnlineAcc,
@@ -91,8 +86,8 @@ func getOnlineIds(contract *contract.Contract, blockNumber *big.Int) ([]common.A
 	opts.BlockNumber = blockNumber
 	var (
 		lastNode common.Address
-		ctx    *MasternodeContext
-		ids    []common.Address
+		ctx      *MasternodeContext
+		ids      []common.Address
 	)
 	lastNode, err := contract.LastOnlineNode(opts)
 	if err != nil {
@@ -107,7 +102,7 @@ func getOnlineIds(contract *contract.Contract, blockNumber *big.Int) ([]common.A
 		lastNode = ctx.preOnline
 		if new(big.Int).Sub(blockNumber, ctx.Node.BlockLastPing).Cmp(big.NewInt(420)) > 0 {
 			continue
-		}else if ctx.Node.BlockOnlineAcc.Cmp(big.NewInt(3000)) < 0 {
+		} else if ctx.Node.BlockOnlineAcc.Cmp(big.NewInt(3000)) < 0 {
 			continue
 		}
 		ids = append(ids, ctx.Node.ID)
@@ -128,7 +123,7 @@ func getOnlineIds(contract *contract.Contract, blockNumber *big.Int) ([]common.A
 		lastNode = ctx.preOnline
 		if new(big.Int).Sub(blockNumber, ctx.Node.BlockLastPing).Cmp(big.NewInt(1200)) > 0 {
 			continue
-		}else if ctx.Node.BlockOnlineAcc.Cmp(big.NewInt(1)) < 0 {
+		} else if ctx.Node.BlockOnlineAcc.Cmp(big.NewInt(1)) < 0 {
 			continue
 		}
 		ids = append(ids, ctx.Node.ID)
@@ -141,8 +136,8 @@ func getAllIds(contract *contract.Contract, blockNumber *big.Int) ([]common.Addr
 	opts.BlockNumber = blockNumber
 	var (
 		lastNode common.Address
-		ctx    *MasternodeContext
-		ids    []common.Address
+		ctx      *MasternodeContext
+		ids      []common.Address
 	)
 	lastNode, err := contract.LastNode(opts)
 	if err != nil {
