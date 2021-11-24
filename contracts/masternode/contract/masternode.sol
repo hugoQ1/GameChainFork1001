@@ -1,4 +1,5 @@
-pragma solidity ^0.5.4;
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity ^0.8.10;
 
 contract Masternode {
 
@@ -55,7 +56,7 @@ contract Masternode {
         emit join(nid, owner);
     }
 
-    function() external {
+    receive() external payable {
         if (address(0) != nodes[msg.sender].investor){
             // ping
             if(0 == nodes[msg.sender].blockOnline){
@@ -96,23 +97,12 @@ contract Masternode {
                 lastNode = preNode;
             }
             bool notGenesisNode = nodes[nid].blockRegister > 0;
-            nodes[nid] = node(
-                address(0),
-                address(0),
-                address(0),
-                address(0),
-                address(0),
-                uint(0),
-                uint(0),
-                uint(0),
-                uint(0)
-            );
-            nodesOf[msg.sender][index] = address(0);
-            nodesOf[msg.sender].length = index;
+            delete nodes[nid];
+            nodesOf[msg.sender].pop();
             countTotalNode -= 1;
             emit quit(nid, msg.sender);
             if(notGenesisNode){
-                msg.sender.transfer(nodeCost - baseCost);
+                payable(msg.sender).transfer(nodeCost - baseCost);
             }
         }
     }
