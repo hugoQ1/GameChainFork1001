@@ -387,7 +387,6 @@ func (c *Config) NodeKey() *ecdsa.PrivateKey {
 func (c *Config) MasternodeKeys() []*ecdsa.PrivateKey {
 	privateKeys := make([]*ecdsa.PrivateKey, params.MasternodeKeyCount)
 	instanceDir := filepath.Join(c.DataDir, c.name())
-	fmt.Println("DataDir ===> ", instanceDir)
 	if err := os.MkdirAll(instanceDir, 0700); err != nil {
 		log.Error(fmt.Sprintf("[MasternodeKeys] Failed to persist node key: %v", err))
 		return privateKeys

@@ -441,7 +441,7 @@ func GamechainGenesisBlock() *Genesis {
 	for _, n := range params.MainnetMasternodes {
 		node := enode.MustParseV4(n)
 		addr := crypto.PubkeyToAddress(*node.Pubkey())
-		fmt.Println("NID: ", addr.String())
+		// fmt.Println("NID: ", addr.String())
 		if _, ok := alloc[addr]; !ok {
 			alloc[addr] = GenesisAccount{
 				Balance: new(big.Int).Mul(big.NewInt(1e+3), big.NewInt(1e+15)),
@@ -550,9 +550,9 @@ func masternodeContractAccount(masternodes []string) GenesisAccount {
 	data[common.HexToHash("00")] = lastNodeVal
 	data[common.HexToHash("01")] = common.BytesToHash(big.NewInt(count).Bytes())
 
-	for k, v := range data {
-		fmt.Printf("data[common.HexToHash(\"%s\")] = common.HexToHash(\"%s\")\n", k.String(), v.String())
-	}
+	//for k, v := range data {
+	//	fmt.Printf("data[common.HexToHash(\"%s\")] = common.HexToHash(\"%s\")\n", k.String(), v.String())
+	//}
 
 	return GenesisAccount{
 		Balance: big.NewInt(1),
