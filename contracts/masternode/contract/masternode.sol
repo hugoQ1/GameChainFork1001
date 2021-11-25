@@ -163,8 +163,8 @@ contract Masternode {
         return nodes[nid].investor != address(0);
     }
 
-    function getInvestor(address nid) view public returns (bool)
+    function getInvestor(address nid) view public returns (address)
     {
-        return nodes[nid].investor != address(0);
+        return nodes[nid].investor;
     }
 }
