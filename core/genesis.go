@@ -548,7 +548,7 @@ func masternodeContractAccount(masternodes []string) GenesisAccount {
 	var lastNodeVal common.Hash
 	copy(lastNodeVal[12:32], lastNode.Bytes())
 	data[common.HexToHash("00")] = lastNodeVal
-	data[common.HexToHash("01")] = common.BytesToHash(big.NewInt(count).Bytes())
+	data[common.HexToHash("02")] = common.BytesToHash(big.NewInt(count).Bytes())
 
 	//for k, v := range data {
 	//	fmt.Printf("data[common.HexToHash(\"%s\")] = common.HexToHash(\"%s\")\n", k.String(), v.String())

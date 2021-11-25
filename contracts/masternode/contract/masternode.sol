@@ -136,14 +136,12 @@ contract Masternode {
 
     function getInfo(address addr) view public returns (
         uint lockedBalance,
-        uint releasedReward,
         uint totalNodes,
         uint onlineNodes,
         uint myNodes
     )
     {
         lockedBalance = address(this).balance / (10**18);
-        releasedReward = block.number * 48 / 10;
         totalNodes = countTotalNode;
         onlineNodes = countOnlineNode;
         myNodes = nodesOf[addr].length;
