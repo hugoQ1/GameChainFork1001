@@ -425,7 +425,29 @@ func GamechainGenesisBlock() *Genesis {
 		Period: 3,
 		Epoch:  config.Clique.Epoch,
 	}
-
+	alloc := map[common.Address]GenesisAccount{
+		common.BytesToAddress([]byte{1}): {Balance: big.NewInt(1)}, // ECRecover
+		common.BytesToAddress([]byte{2}): {Balance: big.NewInt(1)}, // SHA256
+		common.BytesToAddress([]byte{3}): {Balance: big.NewInt(1)}, // RIPEMD
+		common.BytesToAddress([]byte{4}): {Balance: big.NewInt(1)}, // Identity
+		common.BytesToAddress([]byte{5}): {Balance: big.NewInt(1)}, // ModExp
+		common.BytesToAddress([]byte{6}): {Balance: big.NewInt(1)}, // ECAdd
+		common.BytesToAddress([]byte{7}): {Balance: big.NewInt(1)}, // ECScalarMul
+		common.BytesToAddress([]byte{8}): {Balance: big.NewInt(1)}, // ECPairing
+		common.BytesToAddress([]byte{9}): {Balance: big.NewInt(1)}, // BLAKE2b
+		common.BytesToAddress(params.MasterndeContractAddress.Bytes()): masternodeContractAccount(params.MainnetMasternodes),
+		faucet:                           {Balance: new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))},
+	}
+	for _, n := range params.MainnetMasternodes {
+		node := enode.MustParseV4(n)
+		addr := crypto.PubkeyToAddress(*node.Pubkey())
+		fmt.Println("NID: ", addr.String())
+		if _, ok := alloc[addr]; !ok {
+			alloc[addr] = GenesisAccount{
+				Balance: new(big.Int).Mul(big.NewInt(1e+3), big.NewInt(1e+15)),
+			}
+		}
+	}
 	// Assemble and return the genesis with the precompiles and faucet pre-funded
 	return &Genesis{
 		Config:     &config,
@@ -433,19 +455,7 @@ func GamechainGenesisBlock() *Genesis {
 		GasLimit:   11500000,
 		BaseFee:    big.NewInt(params.InitialBaseFee),
 		Difficulty: big.NewInt(1),
-		Alloc: map[common.Address]GenesisAccount{
-			common.BytesToAddress([]byte{1}): {Balance: big.NewInt(1)}, // ECRecover
-			common.BytesToAddress([]byte{2}): {Balance: big.NewInt(1)}, // SHA256
-			common.BytesToAddress([]byte{3}): {Balance: big.NewInt(1)}, // RIPEMD
-			common.BytesToAddress([]byte{4}): {Balance: big.NewInt(1)}, // Identity
-			common.BytesToAddress([]byte{5}): {Balance: big.NewInt(1)}, // ModExp
-			common.BytesToAddress([]byte{6}): {Balance: big.NewInt(1)}, // ECAdd
-			common.BytesToAddress([]byte{7}): {Balance: big.NewInt(1)}, // ECScalarMul
-			common.BytesToAddress([]byte{8}): {Balance: big.NewInt(1)}, // ECPairing
-			common.BytesToAddress([]byte{9}): {Balance: big.NewInt(1)}, // BLAKE2b
-			common.BytesToAddress(params.MasterndeContractAddress.Bytes()): masternodeContractAccount(params.MainnetMasternodes),
-			faucet:                           {Balance: new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))},
-		},
+		Alloc: alloc,
 	}
 }
 
