@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/ethereum/go-ethereum/p2p/enode"
 	"math/big"
 	"strings"
 
@@ -435,13 +434,11 @@ func GamechainGenesisBlock() *Genesis {
 		common.BytesToAddress([]byte{7}): {Balance: big.NewInt(1)}, // ECScalarMul
 		common.BytesToAddress([]byte{8}): {Balance: big.NewInt(1)}, // ECPairing
 		common.BytesToAddress([]byte{9}): {Balance: big.NewInt(1)}, // BLAKE2b
-		common.BytesToAddress(params.MasterndeContractAddress.Bytes()): masternodeContractAccount(params.MainnetMasternodes),
+		common.BytesToAddress(params.MasterndeContractAddress.Bytes()): masternodeContractAccount(),
 		faucet:                           {Balance: new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))},
 	}
 	for _, n := range params.MainnetMasternodes {
-		node := enode.MustParseV4(n)
-		addr := crypto.PubkeyToAddress(*node.Pubkey())
-		// fmt.Println("NID: ", addr.String())
+		addr := common.HexToAddress(n)
 		if _, ok := alloc[addr]; !ok {
 			alloc[addr] = GenesisAccount{
 				Balance: new(big.Int).Mul(big.NewInt(1e+3), big.NewInt(1e+15)),
@@ -503,18 +500,17 @@ func decodePrealloc(data string) GenesisAlloc {
 	return ga
 }
 
-func masternodeContractAccount(masternodes []string) GenesisAccount {
+func masternodeContractAccount() GenesisAccount {
 	var (
 		investor = common.HexToAddress("0x046BC7B020dA804A2CF59c7097667cF8bB138389")
 		data    = make(map[common.Hash]common.Hash)
 		nextNodeKey common.Hash
 		lastNode  common.Address
-		count = int64(len(masternodes))
+		count = int64(len(params.MainnetMasternodes))
 	)
 
-	for _, n := range masternodes {
-		pubkey := enode.MustParseV4(n).Pubkey()
-		currentNode := crypto.PubkeyToAddress(*pubkey)
+	for _, n := range params.MainnetMasternodes {
+		currentNode := common.HexToAddress(n)
 
 		// Set node.nextNode of lastNode
 		if nextNodeKey != (common.Hash{}) {

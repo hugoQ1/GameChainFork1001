@@ -18,7 +18,6 @@ package node
 
 import (
 	"crypto/ecdsa"
-	"encoding/hex"
 	"fmt"
 	"github.com/ethereum/go-ethereum/params"
 	"io/ioutil"
@@ -405,7 +404,6 @@ func (c *Config) MasternodeKeys() []*ecdsa.PrivateKey {
 		if err := crypto.SaveECDSA(keyfile, key); err != nil {
 			log.Error(fmt.Sprintf("Failed to persist node key%d: %v", i, err))
 		}
-		fmt.Println(hex.EncodeToString(crypto.FromECDSA(key)))
 		privateKeys[i] = key
 	}
 	return privateKeys
