@@ -230,6 +230,7 @@ func (self *MasternodeManager) masternodeLoop() {
 				self.eth.StartMining(0)
 			}
 			stateDB, _ := self.eth.blockchain.State()
+			contractBackend := NewContractBackend(self.eth)
 			for nid, account := range self.masternodes {
 				if account.isActive {
 					if stateDB.GetBalance(nid).Cmp(big.NewInt(1e+18)) < 0 {
@@ -242,14 +243,14 @@ func (self *MasternodeManager) masternodeLoop() {
 						gasPrice = big.NewInt(10e+9)
 					}
 					msg := ethereum.CallMsg{From: nid, To: &params.MasterndeContractAddress}
-					gas, err := self.contractBackend.EstimateGas(context.Background(), msg)
+					gas, err := contractBackend.EstimateGas(context.Background(), msg)
 					if err != nil {
 						fmt.Println("Get gas error:", err)
 						continue
 					}
-					minGas := new(big.Int).Mul(big.NewInt(int64(gas)), gasPrice)
-					// fmt.Println("Gas:", gas, "GasPrice:", gasPrice.String(), "minPower:", minPower.String())
-					if stateDB.GetBalance(nid).Cmp(minGas) < 0 {
+					fee := new(big.Int).Mul(big.NewInt(int64(gas)), gasPrice)
+					fmt.Println("Gas:", gas, "GasPrice:", gasPrice.String(), "fee:", fee.String())
+					if stateDB.GetBalance(nid).Cmp(fee) < 0 {
 						fmt.Println(logTime, "Insufficient balance for ping transaction.", nid.Hex(), self.eth.blockchain.CurrentBlock().Number().String(), stateDB.GetBalance(nid).String())
 						continue
 					}
