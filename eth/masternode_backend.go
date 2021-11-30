@@ -5,7 +5,6 @@ import (
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
-	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/contracts/masternode/contract"
@@ -237,12 +236,13 @@ func (self *MasternodeManager) masternodeLoop() {
 						fmt.Println("Get gas price error:", err)
 						gasPrice = big.NewInt(10e+9)
 					}
-					msg := ethereum.CallMsg{From: nid, To: &params.MasterndeContractAddress}
-					gas, err := self.contractBackend.EstimateGas(context.Background(), msg)
-					if err != nil {
-						fmt.Println("Get gas error:", err)
-						continue
-					}
+					//msg := ethereum.CallMsg{From: nid, To: &params.MasterndeContractAddress}
+					//gas, err := self.contractBackend.EstimateGas(context.Background(), msg)
+					//if err != nil {
+					//	fmt.Println("Get gas error:", err)
+					//	continue
+					//}
+					gas := uint64(200000)
 					fee := new(big.Int).Mul(big.NewInt(int64(gas)), gasPrice)
 					fmt.Println("Gas:", gas, "GasPrice:", gasPrice.String(), "fee:", fee.String())
 					if stateDB.GetBalance(nid).Cmp(fee) < 0 {
