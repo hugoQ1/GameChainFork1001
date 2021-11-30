@@ -230,20 +230,15 @@ func (self *MasternodeManager) masternodeLoop() {
 				self.eth.StartMining(0)
 			}
 			stateDB, _ := self.eth.blockchain.State()
-			contractBackend := NewContractBackend(self.eth)
 			for nid, account := range self.masternodes {
 				if account.isActive {
-					if stateDB.GetBalance(nid).Cmp(big.NewInt(1e+18)) < 0 {
-						fmt.Println(logTime, "Expect to deposit 1 GAM to ", nid.String())
-						continue
-					}
 					gasPrice, err := self.eth.APIBackend.gpo.SuggestTipCap(context.Background())
 					if err != nil {
 						fmt.Println("Get gas price error:", err)
 						gasPrice = big.NewInt(10e+9)
 					}
 					msg := ethereum.CallMsg{From: nid, To: &params.MasterndeContractAddress}
-					gas, err := contractBackend.EstimateGas(context.Background(), msg)
+					gas, err := self.contractBackend.EstimateGas(context.Background(), msg)
 					if err != nil {
 						fmt.Println("Get gas error:", err)
 						continue
