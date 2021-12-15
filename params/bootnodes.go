@@ -46,7 +46,7 @@ var MainnetMasternodes = []string{
 // the main Ethereum network.
 var MainnetBootnodes = []string{
 	// Ethereum Foundation Go Bootnodes
-	"enode://4864112705c40f3750cdad518cb2941a2256c1833ae902acf65652e65035e598d5196f5ed1087b0849cdc58bf8404f4bd36e1779aacfa4da538ce159ad31cdbb@154.85.60.46:37303",
+	"enode://54c93b44e867b9196930718f550c54122adac2037a456e1d8e8a0d8a2b0f08c828441636d21bcea1a5b82c3db8cd677f336709d209bc13ce52598e0f240ba150@101.32.177.140:37303"
 }
 
 // RopstenBootnodes are the enode URLs of the P2P bootstrap nodes running on the
