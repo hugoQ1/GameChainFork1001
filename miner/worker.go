@@ -306,41 +306,6 @@ func (w *worker) pendingBlockAndReceipts() (*types.Block, types.Receipts) {
 func (w *worker) start() {
 	atomic.StoreInt32(&w.running, 1)
 	w.startCh <- struct{}{}
-	go w.mineLoop()
-}
-
-func (w *worker) mineLoop() {
-	ticker := time.NewTicker(time.Second).C
-	for {
-		select {
-		case now := <-ticker:
-			w.mine(now.Unix())
-		}
-	}
-}
-
-func (w *worker) mine(now int64) {
-	engine, ok := w.engine.(*clique.Clique)
-	if !ok {
-		log.Error("Only the circum engine was allowed")
-		return
-	}
-	coinbase, err := engine.CheckWitness(w.chain.CurrentBlock(), now)
-	if err != nil {
-		switch err {
-		case clique.ErrWaitForPrevBlock,
-			clique.ErrMinerFutureBlock,
-			clique.ErrInvalidBlockWitness,
-			clique.ErrWaitForRightTime,
-			clique.ErrInvalidMinerBlockTime:
-			log.Debug("Skipped to miner the block, while ", "info", err)
-		default:
-			log.Error("Failed to miner the block", "err", err)
-		}
-		return
-	}
-	w.setEtherbase(coinbase)
-	w.commitNewWork(nil, false, now)
 }
 
 // stop sets the running status as 0.
@@ -407,7 +372,7 @@ func (w *worker) newWorkLoop(recommit time.Duration) {
 		case <-w.exitCh:
 			return
 		}
-		timer.Reset(recommit)
+		timer.Reset(time.Second)
 		atomic.StoreInt32(&w.newTxs, 0)
 	}
 	// clearPending cleans the stale pending tasks.
@@ -434,16 +399,21 @@ func (w *worker) newWorkLoop(recommit time.Duration) {
 			commit(false, commitInterruptNewHead)
 
 		case <-timer.C:
+			if w.isRunning() {
+				timestamp = time.Now().Unix()
+				timer.Reset(time.Second)
+				commit(false, commitInterruptNewHead)
+			}
 			// If mining is running resubmit a new work cycle periodically to pull in
 			// higher priced transactions. Disable this overhead for pending blocks.
-			if w.isRunning() && (w.chainConfig.Clique == nil || w.chainConfig.Clique.Period > 0) {
-				// Short circuit if no new transaction arrives.
-				if atomic.LoadInt32(&w.newTxs) == 0 {
-					timer.Reset(recommit)
-					continue
-				}
-				commit(true, commitInterruptResubmit)
-			}
+			//if w.isRunning() && (w.chainConfig.Clique == nil || w.chainConfig.Clique.Period > 0) {
+			//	// Short circuit if no new transaction arrives.
+			//	if atomic.LoadInt32(&w.newTxs) == 0 {
+			//		timer.Reset(recommit)
+			//		continue
+			//	}
+			//	commit(true, commitInterruptResubmit)
+			//}
 
 		case interval := <-w.resubmitIntervalCh:
 			// Adjust resubmit interval explicitly by user.
@@ -495,10 +465,29 @@ func (w *worker) mainLoop() {
 
 	for {
 		select {
-		case <-w.newWorkCh:
-		//case req := <-w.newWorkCh:
-		//	w.commitNewWork(req.interrupt, req.noempty, req.timestamp)
-
+		case req := <-w.newWorkCh:
+			engine, ok := w.engine.(*clique.Clique)
+			if !ok {
+				log.Error("Only the clique engine was allowed")
+				return
+			}
+			coinbase, err := engine.CheckWitness(w.chain.CurrentBlock(), req.timestamp)
+			if err != nil {
+				switch err {
+				case clique.ErrWaitForPrevBlock,
+					clique.ErrMinerFutureBlock,
+					clique.ErrInvalidBlockWitness,
+					clique.ErrWaitForRightTime,
+					clique.ErrInvalidMinerBlockTime:
+					log.Debug("Skipped to miner the block, while ", "info", err)
+				default:
+					log.Error("Failed to miner the block", "err", err)
+				}
+			}
+			w.setEtherbase(coinbase)
+			if w.snapshotState == nil || coinbase != (common.Address{}) {
+				w.commitNewWork(req.interrupt, req.noempty, req.timestamp)
+			}
 		case ev := <-w.chainSideCh:
 			// Short circuit for duplicate side blocks
 			if _, exist := w.localUncles[ev.Block.Hash()]; exist {
@@ -610,6 +599,9 @@ func (w *worker) taskLoop() {
 		case task := <-w.taskCh:
 			if w.newTaskHook != nil {
 				w.newTaskHook(task)
+			}
+			if w.coinbase == (common.Address{}) {
+				continue
 			}
 			// Reject duplicate sealing work due to resubmitting.
 			sealHash := w.engine.SealHash(task.block.Header())
@@ -840,16 +832,16 @@ func (w *worker) commitTransactions(txs *types.TransactionsByPriceAndNonce, coin
 		// For the third case, the semi-finished work will be submitted to the consensus engine.
 		if interrupt != nil && atomic.LoadInt32(interrupt) != commitInterruptNone {
 			// Notify resubmit loop to increase resubmitting interval due to too frequent commits.
-			if atomic.LoadInt32(interrupt) == commitInterruptResubmit {
-				ratio := float64(gasLimit-w.current.gasPool.Gas()) / float64(gasLimit)
-				if ratio < 0.1 {
-					ratio = 0.1
-				}
-				w.resubmitAdjustCh <- &intervalAdjust{
-					ratio: ratio,
-					inc:   true,
-				}
-			}
+			//if atomic.LoadInt32(interrupt) == commitInterruptResubmit {
+			//	ratio := float64(gasLimit-w.current.gasPool.Gas()) / float64(gasLimit)
+			//	if ratio < 0.1 {
+			//		ratio = 0.1
+			//	}
+			//	w.resubmitAdjustCh <- &intervalAdjust{
+			//		ratio: ratio,
+			//		inc:   true,
+			//	}
+			//}
 			return atomic.LoadInt32(interrupt) == commitInterruptNewHead
 		}
 		// If we don't have enough gas for any further transactions then we're done
@@ -931,9 +923,9 @@ func (w *worker) commitTransactions(txs *types.TransactionsByPriceAndNonce, coin
 	}
 	// Notify resubmit loop to decrease resubmitting interval if current interval is larger
 	// than the user-specified one.
-	if interrupt != nil {
-		w.resubmitAdjustCh <- &intervalAdjust{inc: false}
-	}
+	//if interrupt != nil {
+	//	w.resubmitAdjustCh <- &intervalAdjust{inc: false}
+	//}
 	return false
 }
 
@@ -1027,19 +1019,20 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 
 	// Create an empty block based on temporary copied state for
 	// sealing in advance without waiting block execution finished.
-	if !noempty && atomic.LoadUint32(&w.noempty) == 0 {
-		w.commit(uncles, nil, false, tstart)
-	}
+	//if !noempty && atomic.LoadUint32(&w.noempty) == 0 {
+	//
+	//	w.commit(uncles, nil, false, tstart)
+	//}
 
 	// Fill the block with all available pending transactions.
 	pending := w.eth.TxPool().Pending(true)
 	// Short circuit if there is no available pending transactions.
 	// But if we disable empty precommit already, ignore it. Since
 	// empty block is necessary to keep the liveness of the network.
-	if len(pending) == 0 && atomic.LoadUint32(&w.noempty) == 0 {
-		w.updateSnapshot()
-		return
-	}
+	//if len(pending) == 0 && atomic.LoadUint32(&w.noempty) == 0 {
+	//	w.updateSnapshot()
+	//	return
+	//}
 	// Split the pending transactions into locals and remotes
 	localTxs, remoteTxs := make(map[common.Address]types.Transactions), pending
 	for _, account := range w.eth.TxPool().Locals() {
