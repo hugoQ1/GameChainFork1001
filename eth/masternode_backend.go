@@ -5,7 +5,6 @@ import (
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
-	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/contracts/masternode/contract"
@@ -232,18 +231,19 @@ func (self *MasternodeManager) masternodeLoop() {
 						fmt.Println("SuggestTipCap error:", err)
 						continue
 					}
-					msg := ethereum.CallMsg{
-						From: nid,
-						To: &params.MasterndeContractAddress,
-						// GasTipCap: gasTipCap,
-						Data: nil,
-						Value: big.NewInt(0),
-					}
-					gas, err := self.contractBackend.EstimateGas(ctx, msg)
-					if err != nil {
-						fmt.Println("EstimateGas error:", err)
-						continue
-					}
+					//msg := ethereum.CallMsg{
+					//	From: nid,
+					//	To: &params.MasterndeContractAddress,
+					//	// GasTipCap: gasTipCap,
+					//	Data: nil,
+					//	Value: big.NewInt(0),
+					//}
+					//gas, err := self.contractBackend.EstimateGas(ctx, msg)
+					//if err != nil {
+					//	fmt.Println("EstimateGas error:", err)
+					//	continue
+					//}
+					gas := uint64(200000)
 					gasFeeCap := new(big.Int).Add(
 						gasTipCap,
 						new(big.Int).Mul(self.eth.blockchain.CurrentHeader().BaseFee, big.NewInt(2)),
