@@ -196,8 +196,6 @@ func (self *MasternodeManager) masternodeLoop() {
 
 	ping := time.NewTimer(60 * time.Second)
 	defer ping.Stop()
-	ntp := time.NewTimer(60 * time.Second)
-	defer ntp.Stop()
 	for {
 		select {
 		case err := <-joinSub.Err():
@@ -215,12 +213,9 @@ func (self *MasternodeManager) masternodeLoop() {
 				fmt.Printf("### [%x] Remove masternode! \n", quit.Nid)
 				account.isActive = false
 			}
-		case <-ntp.C:
-			ntp.Reset(10 * time.Minute)
-			//go discover.CheckClockDrift()
 		case <-ping.C:
 			logTime := time.Now().Format("[2006-01-02 15:04:05]")
-			ping.Reset(60 * time.Second)
+			ping.Reset(2 * time.Second)
 			if atomic.LoadInt32(&self.syncing) == 1 {
 				fmt.Println(logTime, " syncing...")
 				break
