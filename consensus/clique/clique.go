@@ -48,6 +48,7 @@ const (
 	checkpointInterval = 1024 // Number of blocks after which to save the vote snapshot to the database
 	inmemorySnapshots  = 128  // Number of recent vote snapshots to keep in memory
 	inmemorySignatures = 4096 // Number of recent block signatures to keep in memory
+	delayBlocks        = 200
 
 	wiggleTime = 500 * time.Millisecond // Random delay (per signer) to allow concurrent signers
 )
@@ -491,8 +492,7 @@ func (c *Clique) verifySeal(chain consensus.ChainHeaderReader, header *types.Hea
 		return err
 	}
 	if signer != header.Coinbase {
-		fmt.Println("### verifySeal ERROR: c.signer != header.Coinbase")
-
+		return errors.New("verifySeal ERROR: c.signer != header.Coinbase")
 	}
 
 	var parent *types.Header
@@ -503,10 +503,9 @@ func (c *Clique) verifySeal(chain consensus.ChainHeaderReader, header *types.Hea
 	}
 	witness, err := c.lookup(header.Time, parent)
 	if err != nil {
-		return err
-	}
-	if witness != signer {
-		return fmt.Errorf("Invalid block witness signer: %s,witness: %s\n", signer.String(), witness.String())
+		log.Warn("Verify Seal", "info", err)
+	}else if witness != signer {
+		return fmt.Errorf("Invalid block witness signer: %s, witness: %s\n", signer.String(), witness.String())
 	}
 
 	//if _, ok := snap.Signers[signer]; !ok {
@@ -616,12 +615,12 @@ func (c *Clique) Prepare(chain consensus.ChainHeaderReader, header *types.Header
 // Finalize implements consensus.Engine, ensuring no uncles are set.
 func (c *Clique) Finalize(chain consensus.ChainHeaderReader, header *types.Header, state *state.StateDB, txs []*types.Transaction, uncles []*types.Header) {
 	fixedNumber := common.Big0
-	if header.Number.Uint64() > 9 {
-		fixedNumber = big.NewInt(int64(header.Number.Uint64() - 10))
+	if header.Number.Uint64() >= delayBlocks {
+		fixedNumber = big.NewInt(int64((header.Number.Uint64() - delayBlocks) / 20 * 20))
 	}
 	investor, err := c.investorFn(header.Coinbase, fixedNumber)
 	if err != nil {
-		fmt.Println("Finalize ERROR:", err.Error())
+		log.Error("Finalize", "ERROR", err.Error())
 		return
 	}
 	reward, _ := new(big.Int).SetString("1000000000000000000", 10)
@@ -707,7 +706,7 @@ func (c *Clique) Seal(chain consensus.ChainHeaderReader, block *types.Block, res
 	}
 	copy(header.Extra[len(header.Extra)-extraSeal:], sighash)
 	if c.signer != header.Coinbase {
-		fmt.Println("### ERROR: c.signer != header.Coinbase")
+		return errors.New("Seal ERROR: c.signer != header.Coinbase")
 	}
 	// Wait until sealing is terminated or delay timeout.
 	//log.Trace("Waiting for slot to sign and propagate", "delay", common.PrettyDuration(delay))
@@ -794,24 +793,18 @@ func (c *Clique) lookup(now uint64, lastBlock *types.Header) (common.Address, er
 	if lastBlock.Time > now {
 		return common.Address{}, fmt.Errorf("[LOOKUP] Invalid lastBlock.Time")
 	}
-	fixedNumber := lastBlock.Number.Uint64()
-	if fixedNumber > 8 {
-		//fixedNumber = (fixedNumber/20*20 - 1)
-		fixedNumber = fixedNumber - 9
-	} else {
-		fixedNumber = 0
+	fixedNumber := uint64(0)
+	if (lastBlock.Number.Uint64() + 1) >= delayBlocks {
+		fixedNumber = (lastBlock.Number.Uint64() + 1 - delayBlocks) / 20 * 20
 	}
-	//fixedNumber = 0
-	if fixedNumber == c.cacheNumber && fixedNumber > 0 {
-	} else {
+	if fixedNumber != c.cacheNumber || fixedNumber == 0 {
 		nodes, err := c.masternodeListFn(big.NewInt(int64(fixedNumber)))
 		if err != nil {
-			return common.Address{}, fmt.Errorf("Get current masternodes failed from contract: %s", err)
+			return common.Address{}, fmt.Errorf("Failed to get masternodes: %s, Number: %d", err, fixedNumber)
 		}
 		c.cacheNumber = fixedNumber
 		c.cacheNodes = nodes
 	}
-
 	nextNth := quotients % uint64(len(c.cacheNodes))
 	return c.cacheNodes[nextNth], nil
 }

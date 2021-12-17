@@ -1,11 +1,13 @@
 package masternode
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/contracts/masternode/contract"
 	"math/big"
+	"sort"
 )
 
 type MasternodeData struct {
@@ -69,15 +71,12 @@ func GetIdsByBlockNumber(contract *contract.Contract, blockNumber *big.Int) ([]c
 
 	ids, err := getOnlineIds(contract, blockNumber)
 	if err == nil && len(ids) > 20 {
+		sort.Sort(signersAscending(ids))
 		return ids, nil
-	} else if err != nil {
-		fmt.Println("getOnlineIds error:", err, blockNumber.Uint64())
 	}
 
 	ids, err = getAllIds(contract, blockNumber)
-	if err != nil {
-		fmt.Println("getAllIds error:", err, blockNumber.Uint64())
-	}
+	sort.Sort(signersAscending(ids))
 	return ids, err
 }
 
@@ -100,9 +99,10 @@ func getOnlineIds(contract *contract.Contract, blockNumber *big.Int) ([]common.A
 			break
 		}
 		lastNode = ctx.preOnline
+		// Offline after 21 minute
 		if new(big.Int).Sub(blockNumber, ctx.Node.BlockLastPing).Cmp(big.NewInt(420)) > 0 {
 			continue
-		} else if ctx.Node.BlockOnlineAcc.Cmp(big.NewInt(3000)) < 0 {
+		} else if ctx.Node.BlockOnline.Cmp(big.NewInt(400)) < 0 {
 			continue
 		}
 		ids = append(ids, ctx.Node.ID)
@@ -121,9 +121,7 @@ func getOnlineIds(contract *contract.Contract, blockNumber *big.Int) ([]common.A
 			break
 		}
 		lastNode = ctx.preOnline
-		if new(big.Int).Sub(blockNumber, ctx.Node.BlockLastPing).Cmp(big.NewInt(1200)) > 0 {
-			continue
-		} else if ctx.Node.BlockOnlineAcc.Cmp(big.NewInt(1)) < 0 {
+		if ctx.Node.BlockOnlineAcc.Cmp(big.NewInt(1)) < 0 {
 			continue
 		}
 		ids = append(ids, ctx.Node.ID)
@@ -146,17 +144,12 @@ func getAllIds(contract *contract.Contract, blockNumber *big.Int) ([]common.Addr
 	for lastNode != (common.Address{}) {
 		ctx, err = GetMasternodeContext(opts, contract, lastNode)
 		if err != nil {
-			fmt.Println("getAllIds error:", err)
 			break
 		}
 		lastNode = ctx.pre
 		ids = append(ids, ctx.Node.ID)
 	}
 	return ids, nil
-}
-
-func GetMasternodeID(ID [64]byte) string {
-	return fmt.Sprintf("%x", ID[:8])
 }
 
 type MasternodeContext struct {
@@ -182,3 +175,11 @@ func GetMasternodeContext(opts *bind.CallOpts, contract *contract.Contract, id c
 		nextOnline: data.NextOnlineNode,
 	}, nil
 }
+
+// signersAscending implements the sort interface to allow sorting a list of addresses
+type signersAscending []common.Address
+
+func (s signersAscending) Len() int           { return len(s) }
+func (s signersAscending) Less(i, j int) bool { return bytes.Compare(s[i][:], s[j][:]) < 0 }
+func (s signersAscending) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+

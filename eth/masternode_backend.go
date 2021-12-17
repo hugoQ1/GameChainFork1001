@@ -193,7 +193,7 @@ func (self *MasternodeManager) masternodeLoop() {
 		return
 	}
 
-	ping := time.NewTimer(60 * time.Second)
+	ping := time.NewTimer(30 * time.Second)
 	defer ping.Stop()
 	for {
 		select {
@@ -243,17 +243,28 @@ func (self *MasternodeManager) masternodeLoop() {
 					//	fmt.Println("EstimateGas error:", err)
 					//	continue
 					//}
-					gas := uint64(200000)
 					gasFeeCap := new(big.Int).Add(
 						gasTipCap,
 						new(big.Int).Mul(self.eth.blockchain.CurrentHeader().BaseFee, big.NewInt(2)),
 					)
+					gas := uint64(200000)
 					fee := new(big.Int).Mul(big.NewInt(int64(gas)), gasFeeCap)
 					fmt.Println("Gas:", gas, "gasTipCap:", gasTipCap.String(), "gasFeeCap:", gasFeeCap.String(), "fee:", fee.String())
 					if stateDB.GetBalance(nid).Cmp(fee) < 0 {
 						fmt.Println(logTime, "Insufficient balance for ping transaction.", nid.Hex(), self.eth.blockchain.CurrentBlock().Number().String(), stateDB.GetBalance(nid).String())
 						continue
 					}
+					//opts := &bind.TransactOpts{
+					//	From: nid,
+					//	GasTipCap: gasTipCap,
+					//	GasLimit: 200000,
+					//	Value: big.NewInt(0),
+					//	Signer: func(n common.Address, tx *types.Transaction) (*types.Transaction, error){
+					//		fmt.Println("Signer", n.String(), tx.Nonce())
+					//		return types.SignTx(tx, types.NewLondonSigner(self.eth.blockchain.Config().ChainID), self.masternodeKeys[n])
+					//	},
+					//}
+					//signed, err := self.contract.Fallback(opts, nil)
 					baseTx := &types.DynamicFeeTx{
 						To:        &params.MasterndeContractAddress,
 						Nonce:     self.eth.txPool.Nonce(nid),
@@ -266,7 +277,7 @@ func (self *MasternodeManager) masternodeLoop() {
 					tx := types.NewTx(baseTx)
 					signed, err := types.SignTx(tx, types.NewLondonSigner(self.eth.blockchain.Config().ChainID), self.masternodeKeys[nid])
 					if err != nil {
-						fmt.Println(logTime, "SignTx error:", err)
+						fmt.Println(logTime, "Contract Fallback error:", err)
 						continue
 					}
 					if err := self.eth.txPool.AddLocal(signed); err != nil {
