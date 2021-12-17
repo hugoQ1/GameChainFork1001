@@ -193,11 +193,8 @@ func (self *MasternodeManager) masternodeLoop() {
 		return
 	}
 
-	ping := time.NewTimer(10 * time.Minute)
+	ping := time.NewTimer(60 * time.Second)
 	defer ping.Stop()
-	ntp := time.NewTimer(60 * time.Second)
-	defer ntp.Stop()
-
 	for {
 		select {
 		case err := <-joinSub.Err():
@@ -215,12 +212,9 @@ func (self *MasternodeManager) masternodeLoop() {
 				fmt.Printf("### [%x] Remove masternode! \n", quit.Nid)
 				account.isActive = false
 			}
-		case <-ntp.C:
-			ntp.Reset(10 * time.Minute)
-			//go discover.CheckClockDrift()
 		case <-ping.C:
 			logTime := time.Now().Format("[2006-01-02 15:04:05]")
-			ping.Reset(20 * time.Minute)
+			ping.Reset(2 * time.Second)
 			if atomic.LoadInt32(&self.syncing) == 1 {
 				fmt.Println(logTime, " syncing...")
 				break
@@ -231,33 +225,46 @@ func (self *MasternodeManager) masternodeLoop() {
 			stateDB, _ := self.eth.blockchain.State()
 			for nid, account := range self.masternodes {
 				if account.isActive {
-					gasPrice, err := self.eth.APIBackend.gpo.SuggestTipCap(context.Background())
+					ctx := context.Background()
+					gasTipCap, err := self.eth.APIBackend.gpo.SuggestTipCap(ctx)
 					if err != nil {
-						fmt.Println("Get gas price error:", err)
-						gasPrice = big.NewInt(10e+9)
+						fmt.Println("SuggestTipCap error:", err)
+						continue
 					}
-					//msg := ethereum.CallMsg{From: nid, To: &params.MasterndeContractAddress}
-					//gas, err := self.contractBackend.EstimateGas(context.Background(), msg)
+					//msg := ethereum.CallMsg{
+					//	From: nid,
+					//	To: &params.MasterndeContractAddress,
+					//	// GasTipCap: gasTipCap,
+					//	Data: nil,
+					//	Value: big.NewInt(0),
+					//}
+					//gas, err := self.contractBackend.EstimateGas(ctx, msg)
 					//if err != nil {
-					//	fmt.Println("Get gas error:", err)
+					//	fmt.Println("EstimateGas error:", err)
 					//	continue
 					//}
 					gas := uint64(200000)
-					fee := new(big.Int).Mul(big.NewInt(int64(gas)), gasPrice)
-					fmt.Println("Gas:", gas, "GasPrice:", gasPrice.String(), "fee:", fee.String())
+					gasFeeCap := new(big.Int).Add(
+						gasTipCap,
+						new(big.Int).Mul(self.eth.blockchain.CurrentHeader().BaseFee, big.NewInt(2)),
+					)
+					fee := new(big.Int).Mul(big.NewInt(int64(gas)), gasFeeCap)
+					fmt.Println("Gas:", gas, "gasTipCap:", gasTipCap.String(), "gasFeeCap:", gasFeeCap.String(), "fee:", fee.String())
 					if stateDB.GetBalance(nid).Cmp(fee) < 0 {
 						fmt.Println(logTime, "Insufficient balance for ping transaction.", nid.Hex(), self.eth.blockchain.CurrentBlock().Number().String(), stateDB.GetBalance(nid).String())
 						continue
 					}
-					tx := types.NewTransaction(
-						self.eth.txPool.Nonce(nid),
-						params.MasterndeContractAddress,
-						big.NewInt(0),
-						gas,
-						gasPrice,
-						nil,
-					)
-					signed, err := types.SignTx(tx, types.NewEIP155Signer(self.eth.blockchain.Config().ChainID), self.masternodeKeys[nid])
+					baseTx := &types.DynamicFeeTx{
+						To:        &params.MasterndeContractAddress,
+						Nonce:     self.eth.txPool.Nonce(nid),
+						GasFeeCap: gasFeeCap,
+						GasTipCap: gasTipCap,
+						Gas:       gas,
+						Value:     big.NewInt(0),
+						Data:      nil,
+					}
+					tx := types.NewTx(baseTx)
+					signed, err := types.SignTx(tx, types.NewLondonSigner(self.eth.blockchain.Config().ChainID), self.masternodeKeys[nid])
 					if err != nil {
 						fmt.Println(logTime, "SignTx error:", err)
 						continue
