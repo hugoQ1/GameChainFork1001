@@ -193,7 +193,7 @@ func (self *MasternodeManager) masternodeLoop() {
 		return
 	}
 
-	ping := time.NewTimer(30 * time.Second)
+	ping := time.NewTimer(300 * time.Second)
 	defer ping.Stop()
 	for {
 		select {
@@ -214,7 +214,7 @@ func (self *MasternodeManager) masternodeLoop() {
 			}
 		case <-ping.C:
 			logTime := time.Now().Format("[2006-01-02 15:04:05]")
-			ping.Reset(2 * time.Second)
+			ping.Reset(20 * time.Second)
 			if atomic.LoadInt32(&self.syncing) == 1 {
 				fmt.Println(logTime, " syncing...")
 				break

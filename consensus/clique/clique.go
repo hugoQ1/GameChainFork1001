@@ -503,7 +503,7 @@ func (c *Clique) verifySeal(chain consensus.ChainHeaderReader, header *types.Hea
 	}
 	witness, err := c.lookup(header.Time, parent)
 	if err != nil {
-		log.Warn("Verify Seal", "info", err)
+		// log.Warn("Verify Seal", "info", err)
 	}else if witness != signer {
 		return fmt.Errorf("Invalid block witness signer: %s, witness: %s\n", signer.String(), witness.String())
 	}
