@@ -416,7 +416,7 @@ func DefaultSepoliaGenesisBlock() *Genesis {
 }
 
 func GamechainGenesisBlock() *Genesis {
-	faucet := common.HexToAddress("0xc72A09C8105699a3ac1183B7207431b759F20011")
+	faucet := common.HexToAddress("0xeD420cfD2252231CD4DA070423E38eB8ae32e52C")
 
 	// Override the default period to the user requested one
 	config := *params.AllCliqueProtocolChanges
