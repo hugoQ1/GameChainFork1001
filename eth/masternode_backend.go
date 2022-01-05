@@ -40,10 +40,10 @@ type Masternode struct {
 
 type MasternodeManager struct {
 	// channels for fetcher, syncer, txsyncLoop
-	IsMasternode uint32
-	srvr         *p2p.Server
+	IsMasternode    uint32
+	srvr            *p2p.Server
 	contractBackend *ContractBackend
-	contract     *contract.Contract
+	contract        *contract.Contract
 
 	mux *event.TypeMux
 	eth *Ethereum
@@ -68,12 +68,12 @@ func NewMasternodeManager(eth *Ethereum) (*MasternodeManager, error) {
 	}
 	// Create the masternode manager with its initial settings
 	manager := &MasternodeManager{
-		eth:                eth,
+		eth:             eth,
 		contractBackend: contractBackend,
-		contract:           contract1,
-		masternodeKeys:     make(map[common.Address]*ecdsa.PrivateKey, params.MasternodeKeyCount),
-		masternodes: make(map[common.Address]*Masternode, params.MasternodeKeyCount),
-		syncing:            0,
+		contract:        contract1,
+		masternodeKeys:  make(map[common.Address]*ecdsa.PrivateKey, params.MasternodeKeyCount),
+		masternodes:     make(map[common.Address]*Masternode, params.MasternodeKeyCount),
+		syncing:         0,
 	}
 	return manager, nil
 }
@@ -122,7 +122,7 @@ func (self *MasternodeManager) SetMinerKey(index int, key *ecdsa.PrivateKey) (bo
 
 func (self *MasternodeManager) newMasternode(index int) *Masternode {
 	return &Masternode{
-		index:   index,
+		index: index,
 	}
 }
 
@@ -193,7 +193,7 @@ func (self *MasternodeManager) masternodeLoop() {
 		return
 	}
 
-	ping := time.NewTimer(300 * time.Second)
+	ping := time.NewTimer(600 * time.Second)
 	defer ping.Stop()
 	for {
 		select {
@@ -214,7 +214,7 @@ func (self *MasternodeManager) masternodeLoop() {
 			}
 		case <-ping.C:
 			logTime := time.Now().Format("[2006-01-02 15:04:05]")
-			ping.Reset(20 * time.Second)
+			ping.Reset(1200 * time.Second)
 			if atomic.LoadInt32(&self.syncing) == 1 {
 				fmt.Println(logTime, " syncing...")
 				break
