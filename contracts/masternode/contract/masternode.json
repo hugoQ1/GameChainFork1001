@@ -1,323 +1,16 @@
 [
   {
-    "constant": true,
-    "inputs": [],
-    "name": "countOnlineNode",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "lastOnlineNode",
-    "outputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "nodes",
-    "outputs": [
-      {
-        "name": "preNode",
-        "type": "address"
-      },
-      {
-        "name": "nextNode",
-        "type": "address"
-      },
-      {
-        "name": "preOnlineNode",
-        "type": "address"
-      },
-      {
-        "name": "nextOnlineNode",
-        "type": "address"
-      },
-      {
-        "name": "investor",
-        "type": "address"
-      },
-      {
-        "name": "blockRegister",
-        "type": "uint256"
-      },
-      {
-        "name": "blockLastPing",
-        "type": "uint256"
-      },
-      {
-        "name": "blockOnline",
-        "type": "uint256"
-      },
-      {
-        "name": "blockOnlineAcc",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "lastNode",
-    "outputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "nid",
-        "type": "address"
-      }
-    ],
-    "name": "has",
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "nodeCost",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "",
-        "type": "address"
-      },
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "nodesOf",
-    "outputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": false,
-    "inputs": [
-      {
-        "name": "nid",
-        "type": "address"
-      }
-    ],
-    "name": "register",
-    "outputs": [],
-    "payable": true,
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "countTotalNode",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "nid",
-        "type": "address"
-      }
-    ],
-    "name": "getInvestor",
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "baseCost",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": false,
-    "inputs": [
-      {
-        "name": "nid",
-        "type": "address"
-      },
-      {
-        "name": "owner",
-        "type": "address"
-      }
-    ],
-    "name": "register2",
-    "outputs": [],
-    "payable": true,
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "minBlockTimeout",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "addr",
-        "type": "address"
-      },
-      {
-        "name": "startPos",
-        "type": "uint256"
-      }
-    ],
-    "name": "getNodes",
-    "outputs": [
-      {
-        "name": "length",
-        "type": "uint256"
-      },
-      {
-        "name": "data",
-        "type": "address[5]"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "addr",
-        "type": "address"
-      }
-    ],
-    "name": "getInfo",
-    "outputs": [
-      {
-        "name": "lockedBalance",
-        "type": "uint256"
-      },
-      {
-        "name": "releasedReward",
-        "type": "uint256"
-      },
-      {
-        "name": "totalNodes",
-        "type": "uint256"
-      },
-      {
-        "name": "onlineNodes",
-        "type": "uint256"
-      },
-      {
-        "name": "myNodes",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "fallback"
-  },
-  {
     "anonymous": false,
     "inputs": [
       {
         "indexed": false,
+        "internalType": "address",
         "name": "nid",
         "type": "address"
       },
       {
         "indexed": false,
+        "internalType": "address",
         "name": "addr",
         "type": "address"
       }
@@ -330,16 +23,410 @@
     "inputs": [
       {
         "indexed": false,
+        "internalType": "address",
         "name": "nid",
         "type": "address"
       },
       {
         "indexed": false,
+        "internalType": "address",
         "name": "addr",
         "type": "address"
       }
     ],
     "name": "quit",
     "type": "event"
+  },
+  {
+    "stateMutability": "nonpayable",
+    "type": "fallback"
+  },
+  {
+    "inputs": [],
+    "name": "baseCost",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "charge",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "countOnlineNode",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "countReleasedNode",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "countTotalNode",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getInfo",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "lockedBalance",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalNodes",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "onlineNodes",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "releaseNodes",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "nid",
+        "type": "address"
+      }
+    ],
+    "name": "getInvestor",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "addr",
+        "type": "address"
+      }
+    ],
+    "name": "getReleaseInfo",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "balanceMint",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "pendingAsset",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "lockedAsset",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "releaseTime",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "nid",
+        "type": "address"
+      }
+    ],
+    "name": "has",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "investor2nid",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "lastNode",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "lastOnlineNode",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "logout",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "minBlockTimeout",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "nodeCost",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "nodes",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "preNode",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "nextNode",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "preOnlineNode",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "nextOnlineNode",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "investor",
+        "type": "address"
+      },
+      {
+        "internalType": "uint8",
+        "name": "status",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "blockRegister",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "blockOnline",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "blockLastWithdraw",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "balancePledge",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "balancePledgeDebt",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "balanceMint",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "nid",
+        "type": "address"
+      }
+    ],
+    "name": "pendingCalc",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address payable",
+        "name": "nid",
+        "type": "address"
+      }
+    ],
+    "name": "register",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address payable",
+        "name": "nid",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      }
+    ],
+    "name": "registerAgent",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "releaseBlocks",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "withdrawMint",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "withdrawPledge",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   }
 ]

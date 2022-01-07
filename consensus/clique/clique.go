@@ -48,9 +48,7 @@ const (
 	checkpointInterval = 1024 // Number of blocks after which to save the vote snapshot to the database
 	inmemorySnapshots  = 128  // Number of recent vote snapshots to keep in memory
 	inmemorySignatures = 4096 // Number of recent block signatures to keep in memory
-	delayBlocks        = 200
-
-	wiggleTime = 500 * time.Millisecond // Random delay (per signer) to allow concurrent signers
+	delayBlocks        = 20
 )
 
 // Clique proof-of-authority protocol constants.
@@ -504,7 +502,7 @@ func (c *Clique) verifySeal(chain consensus.ChainHeaderReader, header *types.Hea
 	witness, err := c.lookup(header.Time, parent)
 	if err != nil {
 		// log.Warn("Verify Seal", "info", err)
-	}else if witness != signer {
+	} else if witness != signer {
 		return fmt.Errorf("Invalid block witness signer: %s, witness: %s\n", signer.String(), witness.String())
 	}
 
@@ -618,15 +616,88 @@ func (c *Clique) Finalize(chain consensus.ChainHeaderReader, header *types.Heade
 	if header.Number.Uint64() >= delayBlocks {
 		fixedNumber = big.NewInt(int64((header.Number.Uint64() - delayBlocks) / 20 * 20))
 	}
-	investor, err := c.investorFn(header.Coinbase, fixedNumber)
-	if err != nil {
-		log.Error("Finalize", "ERROR", err.Error())
-		return
+	// Block reward
+	reward, _ := new(big.Int).SetString("8000000000000000000", 10)
+	state.AddBalance(params.MasternodeContractAddress, reward)
+	balanceMintKey := getNodeAttrKey(header.Coinbase.Bytes()[:], 10)
+	balancePledgeKey := getNodeAttrKey(header.Coinbase.Bytes()[:], 8)
+	balancePledgeVal := state.GetState(params.MasternodeContractAddress, balancePledgeKey)
+	balancePledge := new(big.Int).SetBytes(balancePledgeVal.Bytes())
+	blockRegisterKey := getNodeAttrKey(header.Coinbase.Bytes()[:], 5)
+	blockRegisterVal := state.GetState(params.MasternodeContractAddress, blockRegisterKey)
+	if blockRegisterVal == (common.Hash{}) && balancePledge.Cmp(params.MasternodeCost) < 0 {
+		// Genesis node
+		balancePledge1 := new(big.Int).Add(balancePledge, reward)
+		if balancePledge1.Cmp(params.MasternodeCost) < 0 {
+			state.SetState(params.MasternodeContractAddress, balancePledgeKey, common.BytesToHash(balancePledge1.Bytes()))
+		} else {
+			state.SetState(params.MasternodeContractAddress, balancePledgeKey, common.BytesToHash(params.MasternodeCost.Bytes()))
+			balanceMint1 := new(big.Int).Sub(balancePledge1, params.MasternodeCost)
+			state.SetState(params.MasternodeContractAddress, balanceMintKey, common.BytesToHash(balanceMint1.Bytes()))
+		}
+	} else {
+		balanceMintVal := state.GetState(params.MasternodeContractAddress, balanceMintKey)
+		balanceMint := new(big.Int).SetBytes(balanceMintVal.Bytes())
+		balanceMint.Add(balanceMint, reward)
+		state.SetState(params.MasternodeContractAddress, balanceMintKey, common.BytesToHash(balanceMint.Bytes()))
 	}
-	reward, _ := new(big.Int).SetString("1000000000000000000", 10)
-	state.AddBalance(investor, reward)
+	// Online check
+	parent := chain.GetHeader(header.ParentHash, header.Number.Uint64()-1)
+	if header.Number.Uint64() > 1 && header.Coinbase != (common.Address{}) && (header.Time-parent.Time) > 3 {
+		preNid, err := c.getPreNid(fixedNumber.Uint64(), header.Coinbase)
+		if err != nil {
+			log.Error("Finalize getPreNid", "Number", header.Number.Uint64(), "ERROR", err.Error())
+			return
+		}
+		if parent.Coinbase != preNid {
+			log.Warn("Offline detected", "actual", parent.Coinbase.String(), "expect", preNid.String(), "current", header.Coinbase.String())
+			blockOnlineKey := getNodeAttrKey(preNid.Bytes()[:], 6)
+			blockOnlineVal := state.GetState(params.MasternodeContractAddress, blockOnlineKey)
+			if blockOnlineVal != (common.Hash{}) {
+				// countOnlineNode -= 1
+				countOnlineNodeKey := common.HexToHash("03")
+				countOnlineNodeVal := state.GetState(params.MasternodeContractAddress, countOnlineNodeKey)
+				countOnlineNode := new(big.Int).SetBytes(countOnlineNodeVal.Bytes())
+				countOnlineNode = new(big.Int).Sub(countOnlineNode, big.NewInt(1))
+				countOnlineNodeVal = common.BytesToHash(countOnlineNode.Bytes())
+				state.SetState(params.MasternodeContractAddress, countOnlineNodeKey, countOnlineNodeVal)
+				// nodes[nid].blockOnline = 0
+				state.SetState(params.MasternodeContractAddress, blockOnlineKey, common.Hash{})
+				log.Warn("Offline setting", "nid", preNid, "online", countOnlineNode.String())
+				// reset preOnlineNode
+				preOnlineNodeKey := getNodeAttrKey(preNid.Bytes()[:], 2)
+				preOnlineNodeVal := state.GetState(params.MasternodeContractAddress, preOnlineNodeKey)
+				nextOnlineNodeKey := getNodeAttrKey(preNid.Bytes()[:], 3)
+				nextOnlineNodeVal := state.GetState(params.MasternodeContractAddress, nextOnlineNodeKey)
+				if preOnlineNodeVal != (common.Hash{}) {
+					nextOnlineNodeKey1 := getNodeAttrKey(preOnlineNodeVal.Bytes()[12:32], 3)
+					// nodes[preOnlineNode].nextOnlineNode = nextOnlineNode
+					state.SetState(params.MasternodeContractAddress, nextOnlineNodeKey1, nextOnlineNodeVal)
+					state.SetState(params.MasternodeContractAddress, preOnlineNodeKey, common.Hash{})
+				}
+				// reset nextOnlineNode
+				if nextOnlineNodeVal != (common.Hash{}) {
+					preOnlineNodeKey1 := getNodeAttrKey(nextOnlineNodeVal.Bytes()[12:32], 2)
+					// nodes[nextOnlineNode].preOnlineNode = preOnlineNode
+					state.SetState(params.MasternodeContractAddress, preOnlineNodeKey1, preOnlineNodeVal)
+					state.SetState(params.MasternodeContractAddress, nextOnlineNodeKey, common.Hash{})
+				} else {
+					lastOnlineNodeKey := common.HexToHash("01")
+					state.SetState(params.MasternodeContractAddress, lastOnlineNodeKey, preOnlineNodeVal)
+				}
+			}
+		}
+	}
 	header.Root = state.IntermediateRoot(chain.Config().IsEIP158(header.Number))
 	header.UncleHash = types.CalcUncleHash(nil)
+}
+
+func getNodeAttrKey(nid []byte, index int64) common.Hash {
+	var nodeKeyRaw [64]byte
+	nodeKeyRaw[63] = 7
+	copy(nodeKeyRaw[12:32], nid[:])
+	nodeKey := new(big.Int).SetBytes(crypto.Keccak256(nodeKeyRaw[:]))
+	return common.BytesToHash(new(big.Int).Add(nodeKey, big.NewInt(index)).Bytes())
 }
 
 // FinalizeAndAssemble implements consensus.Engine, ensuring no uncles are set,
@@ -827,6 +898,28 @@ func (c *Clique) CheckWitness(lastBlock *types.Block, now int64) (common.Address
 		}
 	}
 	return common.Address{}, ErrInvalidBlockWitness
+}
+
+func (c *Clique) getPreNid(fixedNumber uint64, nid common.Address) (common.Address, error) {
+	if fixedNumber != c.cacheNumber || fixedNumber == 0 {
+		nodes, err := c.masternodeListFn(big.NewInt(int64(fixedNumber)))
+		if err != nil {
+			return common.Address{}, fmt.Errorf("Failed to get masternodes: %s, Number: %d", err, fixedNumber)
+		}
+		c.cacheNumber = fixedNumber
+		c.cacheNodes = nodes
+	}
+	nodesLen := int64(len(c.cacheNodes))
+	for i := int64(0); i < nodesLen; i++ {
+		if c.cacheNodes[i] == nid {
+			if i == 0 {
+				return c.cacheNodes[nodesLen-1], nil
+			} else {
+				return c.cacheNodes[i-1], nil
+			}
+		}
+	}
+	return common.Address{}, fmt.Errorf("Failed to get pre nid: %s, Number: %d", nid.String(), fixedNumber)
 }
 
 func (c *Clique) setSigner(signer common.Address) {

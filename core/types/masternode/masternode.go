@@ -11,17 +11,15 @@ import (
 )
 
 type MasternodeData struct {
-	Index          int            `json:"index"     gencodec:"required"`
-	Nid            common.Address `json:"nid"       gencodec:"required"`
-	Data           string         `json:"data"      gencodec:"required"`
-	Note           string         `json:"note"      gencodec:"required"`
-	PrivateKey     string         `json:"privateKey"       gencodec:"required"`
-	Investor       common.Address `json:"investor"`
-	Status         uint64         `json:"status"`
-	BlockRegister  uint64         `json:"blockRegister"`
-	BlockLastPing  uint64         `json:"blockLastPing"`
-	BlockOnline    uint64         `json:"blockOnline"`
-	BlockOnlineAcc uint64         `json:"blockOnlineAcc"`
+	Index         int            `json:"index"     gencodec:"required"`
+	Nid           common.Address `json:"nid"       gencodec:"required"`
+	Data          string         `json:"data"      gencodec:"required"`
+	Note          string         `json:"note"      gencodec:"required"`
+	PrivateKey    string         `json:"privateKey"       gencodec:"required"`
+	Investor      common.Address `json:"investor"`
+	Status        uint8          `json:"status"`
+	BlockRegister uint64         `json:"blockRegister"`
+	BlockOnline   uint64         `json:"blockOnline"`
 }
 
 type MasternodeDatas []*MasternodeData
@@ -39,24 +37,18 @@ func (s MasternodeDatas) Swap(i, j int) {
 }
 
 type Masternode struct {
-	ID          common.Address
-	Investor    common.Address
-	OriginBlock *big.Int
-
-	BlockOnline    *big.Int
-	BlockOnlineAcc *big.Int
-	BlockLastPing  *big.Int
+	ID            common.Address
+	Investor      common.Address
+	BlockRegister *big.Int
+	BlockOnline   *big.Int
 }
 
-func newMasternode(id, investor common.Address,
-	block, blockOnline, blockOnlineAcc, blockLastPing *big.Int) *Masternode {
+func newMasternode(id, investor common.Address, blockRegister, blockOnline *big.Int) *Masternode {
 	return &Masternode{
-		ID:             id,
-		Investor:       investor,
-		OriginBlock:    block,
-		BlockOnline:    blockOnline,
-		BlockOnlineAcc: blockOnlineAcc,
-		BlockLastPing:  blockLastPing,
+		ID:            id,
+		Investor:      investor,
+		BlockRegister: blockRegister,
+		BlockOnline:   blockOnline,
 	}
 }
 
@@ -99,29 +91,8 @@ func getOnlineIds(contract *contract.Contract, blockNumber *big.Int) ([]common.A
 			break
 		}
 		lastNode = ctx.preOnline
-		// Offline after 21 minute
-		if new(big.Int).Sub(blockNumber, ctx.Node.BlockLastPing).Cmp(big.NewInt(420)) > 0 {
-			continue
-		} else if ctx.Node.BlockOnline.Cmp(big.NewInt(400)) < 0 {
-			continue
-		}
-		ids = append(ids, ctx.Node.ID)
-	}
-	if len(ids) > 20 {
-		return ids, nil
-	}
-	lastNode, err = contract.LastOnlineNode(opts)
-	if err != nil {
-		return ids, err
-	}
-	for lastNode != (common.Address{}) {
-		ctx, err = GetMasternodeContext(opts, contract, lastNode)
-		if err != nil {
-			fmt.Println("getOnlineIds2 error:", err)
-			break
-		}
-		lastNode = ctx.preOnline
-		if ctx.Node.BlockOnlineAcc.Cmp(big.NewInt(1)) < 0 {
+		// Online time less than 20 minutes
+		if new(big.Int).Sub(blockNumber, ctx.Node.BlockOnline).Cmp(big.NewInt(21)) < 0 {
 			continue
 		}
 		ids = append(ids, ctx.Node.ID)
@@ -165,7 +136,7 @@ func GetMasternodeContext(opts *bind.CallOpts, contract *contract.Contract, id c
 	if err != nil {
 		return &MasternodeContext{}, err
 	}
-	node := newMasternode(id, data.Investor, data.BlockRegister, data.BlockOnline, data.BlockOnlineAcc, data.BlockLastPing)
+	node := newMasternode(id, data.Investor, data.BlockRegister, data.BlockOnline)
 
 	return &MasternodeContext{
 		Node:       node,
@@ -182,4 +153,3 @@ type signersAscending []common.Address
 func (s signersAscending) Len() int           { return len(s) }
 func (s signersAscending) Less(i, j int) bool { return bytes.Compare(s[i][:], s[j][:]) < 0 }
 func (s signersAscending) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
-

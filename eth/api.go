@@ -125,16 +125,14 @@ func (api *PrivateMinerAPI) Miners() masternode.MasternodeDatas {
 		mn := &masternode.MasternodeData{
 			Index:      node.index,
 			Data:       data,
-			Nid:    nid,
+			Nid:        nid,
 			PrivateKey: common.Bytes2Hex(crypto.FromECDSA(key)),
 			Note:       note,
 
-			Investor: node.investor,
-			Status: node.status,
+			Investor:      node.investor,
+			Status:        node.status,
 			BlockRegister: node.blockRegister,
-			BlockLastPing: node.blockLastPing,
-			BlockOnline: node.blockOnline,
-			BlockOnlineAcc: node.blockOnlineAcc,
+			BlockOnline:   node.blockOnline,
 		}
 		result = append(result, mn)
 	}

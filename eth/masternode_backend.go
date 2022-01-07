@@ -30,12 +30,10 @@ type Masternode struct {
 	index    int
 	isActive bool
 
-	investor       common.Address
-	status         uint64
-	blockRegister  uint64
-	blockLastPing  uint64
-	blockOnline    uint64
-	blockOnlineAcc uint64
+	investor      common.Address
+	status        uint8
+	blockRegister uint64
+	blockOnline   uint64
 }
 
 type MasternodeManager struct {
@@ -62,7 +60,7 @@ type MasternodeManager struct {
 
 func NewMasternodeManager(eth *Ethereum) (*MasternodeManager, error) {
 	contractBackend := NewContractBackend(eth)
-	contract1, err := contract.NewContract(params.MasterndeContractAddress, contractBackend)
+	contract1, err := contract.NewContract(params.MasternodeContractAddress, contractBackend)
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +191,7 @@ func (self *MasternodeManager) masternodeLoop() {
 		return
 	}
 
-	ping := time.NewTimer(600 * time.Second)
+	ping := time.NewTimer(60 * time.Second)
 	defer ping.Stop()
 	for {
 		select {
@@ -214,7 +212,7 @@ func (self *MasternodeManager) masternodeLoop() {
 			}
 		case <-ping.C:
 			logTime := time.Now().Format("[2006-01-02 15:04:05]")
-			ping.Reset(1200 * time.Second)
+			ping.Reset(60 * time.Second)
 			if atomic.LoadInt32(&self.syncing) == 1 {
 				fmt.Println(logTime, " syncing...")
 				break
@@ -223,8 +221,10 @@ func (self *MasternodeManager) masternodeLoop() {
 				self.eth.StartMining(0)
 			}
 			stateDB, _ := self.eth.blockchain.State()
-			for nid, account := range self.masternodes {
-				if account.isActive {
+			for nid, _ := range self.masternodes {
+				self.activeMasternode(nid)
+				account := self.masternodes[nid]
+				if account.isActive && account.status == 1 && account.blockOnline == 0 {
 					ctx := context.Background()
 					gasTipCap, err := self.eth.APIBackend.gpo.SuggestTipCap(ctx)
 					if err != nil {
@@ -232,16 +232,16 @@ func (self *MasternodeManager) masternodeLoop() {
 						continue
 					}
 					//msg := ethereum.CallMsg{
-					//	From: nid,
-					//	To: &params.MasterndeContractAddress,
-					//	// GasTipCap: gasTipCap,
-					//	Data: nil,
-					//	Value: big.NewInt(0),
+					//	From:      nid,
+					//	To:        &params.MasternodeContractAddress,
+					//	GasTipCap: gasTipCap,
+					//	Data:      nil,
+					//	Value:     big.NewInt(0),
 					//}
-					//gas, err := self.contractBackend.EstimateGas(ctx, msg)
+					//EstimateGas, err := self.contractBackend.EstimateGas(ctx, msg)
 					//if err != nil {
 					//	fmt.Println("EstimateGas error:", err)
-					//	continue
+					//	//continue
 					//}
 					gasFeeCap := new(big.Int).Add(
 						gasTipCap,
@@ -254,19 +254,8 @@ func (self *MasternodeManager) masternodeLoop() {
 						fmt.Println(logTime, "Insufficient balance for ping transaction.", nid.Hex(), self.eth.blockchain.CurrentBlock().Number().String(), stateDB.GetBalance(nid).String())
 						continue
 					}
-					//opts := &bind.TransactOpts{
-					//	From: nid,
-					//	GasTipCap: gasTipCap,
-					//	GasLimit: 200000,
-					//	Value: big.NewInt(0),
-					//	Signer: func(n common.Address, tx *types.Transaction) (*types.Transaction, error){
-					//		fmt.Println("Signer", n.String(), tx.Nonce())
-					//		return types.SignTx(tx, types.NewLondonSigner(self.eth.blockchain.Config().ChainID), self.masternodeKeys[n])
-					//	},
-					//}
-					//signed, err := self.contract.Fallback(opts, nil)
 					baseTx := &types.DynamicFeeTx{
-						To:        &params.MasterndeContractAddress,
+						To:        &params.MasternodeContractAddress,
 						Nonce:     self.eth.txPool.Nonce(nid),
 						GasFeeCap: gasFeeCap,
 						GasTipCap: gasTipCap,
@@ -299,17 +288,11 @@ func (self *MasternodeManager) activeMasternode(id common.Address) {
 		fmt.Println("[MN] activeMasternode Error:", err)
 		return
 	}
-
-	if !self.masternodes[id].isActive && node.Investor != (common.Address{}) {
-		self.masternodes[id].isActive = true
-	}
-
-	if node.Investor != (common.Address{}) {
+	self.masternodes[id].isActive = node.Status == 1
+	if node.Status > 0 {
 		self.masternodes[id].investor = node.Investor
-		self.masternodes[id].status = 1
+		self.masternodes[id].status = node.Status
 		self.masternodes[id].blockRegister = node.BlockRegister.Uint64()
-		self.masternodes[id].blockLastPing = node.BlockLastPing.Uint64()
 		self.masternodes[id].blockOnline = node.BlockOnline.Uint64()
-		self.masternodes[id].blockOnlineAcc = node.BlockOnlineAcc.Uint64()
 	}
 }

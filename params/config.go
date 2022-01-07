@@ -26,8 +26,10 @@ import (
 )
 
 var (
-	MasterndeContractAddress  = common.HexToAddress("0x1111111111111111111111111111111111111111")
-	MasternodeKeyCount int    = 21
+	MasternodeContractAddress = common.HexToAddress("0x1111111111111111111111111111111111111111")
+	MasternodeCost            = new(big.Int).Mul(big.NewInt(10000), big.NewInt(1e18))
+
+	MasternodeKeyCount int = 21
 )
 
 // Genesis hashes to enforce below configs on.

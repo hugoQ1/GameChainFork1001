@@ -3,116 +3,100 @@ pragma solidity ^0.8.10;
 
 contract Masternode {
 
-    uint public constant nodeCost = 10000 * 10**18;
     uint public constant baseCost = 10**18;
     uint public constant minBlockTimeout = 800;
 
-    address public lastNode;
-    address public lastOnlineNode;
-    uint public countTotalNode;
-    uint public countOnlineNode;
+    address public lastNode; // 0
+    address public lastOnlineNode; // 1
+    uint public countTotalNode; // 2
+    uint public countOnlineNode; // 3
+    uint public countReleasedNode; // 4
+    uint public releaseBlocks; // 5
+    uint public nodeCost; // 6
 
     struct node {
-        address preNode;
-        address nextNode;
-        address preOnlineNode;
-        address nextOnlineNode;
-        address investor;
-        uint blockRegister;
-        uint blockLastPing;
-        uint blockOnline;
-        uint blockOnlineAcc;
+        address preNode; // 0
+        address nextNode; // 1
+        address preOnlineNode; // 2
+        address nextOnlineNode; // 3
+        address investor; // 4
+        uint8 status; // 4 (0=empty, 1=enable, 2=release)
+        uint blockRegister; // 5
+        uint blockOnline; // 6
+        uint blockLastWithdraw; // 7
+        uint balancePledge; // 8
+        uint balancePledgeDebt; // 9
+        uint balanceMint; // 10
+        //uint balanceMintDebt; // 11
     }
 
-    mapping (address => node) public nodes;
-    mapping (address => address[]) public nodesOf;
+    mapping (address => node) public nodes; // 7
+    mapping (address => address) public investor2nid; // 8
 
     event join(address nid, address addr);
     event quit(address nid, address addr);
 
     function register(address payable nid) public payable{
-        register2(nid, msg.sender);
+        registerAgent(nid, msg.sender);
     }
 
-    function register2(address payable nid, address owner) public payable{
-        require(
-            nid != address(0) &&
-            address(0) == nodes[nid].investor &&
-            msg.value == nodeCost
-        );
+    function registerAgent(address payable nid, address owner) public payable{
+        require(nid != address(0), "Invalid nid!");
+        require(0 == nodes[nid].status, "The nid has been registered!");
+        require(address(0) == investor2nid[owner], "The owner as been registered!");
+        require(msg.value == nodeCost, "Invalid nodeCost!");
         nodes[nid] = node(
             lastNode,address(0),
             address(0),address(0),
-            owner,
-            block.number,0,0,0
+            owner, 1,
+            block.number,0,0,
+            (nodeCost - baseCost), 0,
+            0
         );
         if(lastNode != address(0)){
             nodes[lastNode].nextNode = nid;
         }
         lastNode = nid;
-        nodesOf[owner].push(nid);
+        investor2nid[owner] = nid;
         countTotalNode += 1;
         nid.transfer(baseCost);
         emit join(nid, owner);
     }
 
-    receive() external payable {
-        if (address(0) != nodes[msg.sender].investor){
-            // ping
-            if(0 == nodes[msg.sender].blockOnline){
-                nodes[msg.sender].blockOnline = 1;
-                countOnlineNode += 1;
-                if(lastOnlineNode != address(0)){
-                    nodes[lastOnlineNode].nextOnlineNode = msg.sender;
-                }
-                nodes[msg.sender].preOnlineNode = lastOnlineNode;
-                nodes[msg.sender].nextOnlineNode = address(0);
-                lastOnlineNode = msg.sender;
-            }else if(nodes[msg.sender].blockLastPing > 0){
-                uint blockGap = block.number - nodes[msg.sender].blockLastPing;
-                if(blockGap > minBlockTimeout){
-                    nodes[msg.sender].blockOnline = 1;
-                }else{
-                    nodes[msg.sender].blockOnline += blockGap;
-                    nodes[msg.sender].blockOnlineAcc += blockGap;
-                }
-            }
-            nodes[msg.sender].blockLastPing = block.number;
-            fix(nodes[msg.sender].preOnlineNode);
-            fix(nodes[msg.sender].nextOnlineNode);
-        }else if(nodesOf[msg.sender].length > 0){
-            uint index = nodesOf[msg.sender].length -1;
-            address nid = nodesOf[msg.sender][index];
-            require(address(0) != nodes[nid].investor);
-            offline(nid);
-
-            address preNode = nodes[nid].preNode;
-            address nextNode = nodes[nid].nextNode;
-            if(preNode != address(0)){
-                nodes[preNode].nextNode = nextNode;
-            }
-            if(nextNode != address(0)){
-                nodes[nextNode].preNode = preNode;
-            }else{
-                lastNode = preNode;
-            }
-            bool notGenesisNode = nodes[nid].blockRegister > 0;
-            delete nodes[nid];
-            nodesOf[msg.sender].pop();
-            countTotalNode -= 1;
-            emit quit(nid, msg.sender);
-            if(notGenesisNode){
-                payable(msg.sender).transfer(nodeCost - baseCost);
-            }
+    function logout() public{
+        address nid = investor2nid[msg.sender];
+        require(1 == nodes[nid].status, "Has been released!");
+        offline(nid);
+        address preNode = nodes[nid].preNode;
+        address nextNode = nodes[nid].nextNode;
+        if(preNode != address(0)){
+            nodes[preNode].nextNode = nextNode;
         }
+        if(nextNode != address(0)){
+            nodes[nextNode].preNode = preNode;
+        }else{
+            lastNode = preNode;
+        }
+        countReleasedNode += 1;
+        nodes[nid].blockLastWithdraw = block.number;
+        nodes[nid].status = 2;
+        emit quit(nid, msg.sender);
     }
 
-    function fix(address nid) internal {
-        if (address(0) != nodes[nid].investor){
-            if((block.number - nodes[nid].blockLastPing) > minBlockTimeout){
-                offline(nid);
-            }
+    function charge() public payable{
+    }
+
+    fallback() external {
+        require(1 == nodes[msg.sender].status, "Invalid sender!");
+        require(0 == nodes[msg.sender].blockOnline, "Already online!");
+        nodes[msg.sender].blockOnline = block.number;
+        countOnlineNode += 1;
+        if(lastOnlineNode != address(0)){
+            nodes[lastOnlineNode].nextOnlineNode = msg.sender;
         }
+        nodes[msg.sender].preOnlineNode = lastOnlineNode;
+        nodes[msg.sender].nextOnlineNode = address(0);
+        lastOnlineNode = msg.sender;
     }
 
     function offline(address nid) internal {
@@ -134,35 +118,75 @@ contract Masternode {
         }
     }
 
-    function getInfo(address addr) view public returns (
+    function getInfo() view public returns (
         uint lockedBalance,
         uint totalNodes,
         uint onlineNodes,
-        uint myNodes
+        uint releaseNodes
     )
     {
         lockedBalance = address(this).balance / (10**18);
         totalNodes = countTotalNode;
         onlineNodes = countOnlineNode;
-        myNodes = nodesOf[addr].length;
+        releaseNodes = countReleasedNode;
     }
 
-    function getNodes(address addr, uint startPos) public view
-    returns (uint length, address[5] memory data) {
-        address[] memory myIds = nodesOf[addr];
-        length = uint(myIds.length);
-        for(uint i = 0; i < 5 && (i+startPos) < length; i++) {
-            data[i] = myIds[i+startPos];
+    function getReleaseInfo(address addr) view public returns (
+        uint balanceMint,
+        uint pendingAsset,
+        uint lockedAsset,
+        uint releaseTime
+    )
+    {
+        address nid = investor2nid[addr];
+        balanceMint = nodes[nid].balanceMint;
+        if(nodes[nid].status == 2){
+            pendingAsset = pendingCalc(nid);
+            lockedAsset = nodes[nid].balancePledge - nodes[nid].balancePledgeDebt - pendingAsset;
+            uint releasePerBlock = nodes[nid].balancePledge / releaseBlocks;
+            releaseTime = lockedAsset / releasePerBlock * 3;
         }
     }
 
     function has(address nid) view public returns (bool)
     {
-        return nodes[nid].investor != address(0);
+        return nodes[nid].status == 1;
     }
 
     function getInvestor(address nid) view public returns (address)
     {
         return nodes[nid].investor;
     }
+
+    function pendingCalc(address nid) view public returns (uint){
+        if (nodes[nid].status != 2) return 0;
+        uint gapBlocks = block.number - nodes[nid].blockLastWithdraw;
+        uint releasePerBlock = nodes[nid].balancePledge / releaseBlocks;
+        uint pendingAsset = gapBlocks * releasePerBlock;
+        uint pendingAssetMax = nodes[nid].balancePledge - nodes[nid].balancePledgeDebt;
+        if(pendingAsset > pendingAssetMax){
+            pendingAsset = pendingAssetMax;
+        }
+        return pendingAsset;
+    }
+
+    function withdrawPledge() public{
+        address nid = investor2nid[msg.sender];
+        require(nid != address(0), "Don't have node");
+        require(nodes[nid].blockLastWithdraw > 0 && nodes[nid].status == 2, "Not yet released");
+        require(block.number > nodes[nid].blockLastWithdraw, "Invalid blockLastWithdraw");
+        uint pendingAsset = pendingCalc(nid);
+        nodes[nid].balancePledgeDebt += pendingAsset;
+        nodes[nid].blockLastWithdraw = block.number;
+        payable(msg.sender).transfer(pendingAsset);
+    }
+
+    function withdrawMint() public{
+        address nid = investor2nid[msg.sender];
+        require(nid != address(0), "Don't have node");
+        uint balanceMint = nodes[nid].balanceMint;
+        nodes[nid].balanceMint = 0;
+        payable(msg.sender).transfer(balanceMint);
+    }
+
 }

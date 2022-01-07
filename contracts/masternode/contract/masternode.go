@@ -30,7 +30,7 @@ var (
 
 // ContractMetaData contains all meta data concerning the Contract contract.
 var ContractMetaData = &bind.MetaData{
-	ABI: "[{\"constant\":true,\"inputs\":[],\"name\":\"countOnlineNode\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"lastOnlineNode\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"\",\"type\":\"address\"}],\"name\":\"nodes\",\"outputs\":[{\"name\":\"preNode\",\"type\":\"address\"},{\"name\":\"nextNode\",\"type\":\"address\"},{\"name\":\"preOnlineNode\",\"type\":\"address\"},{\"name\":\"nextOnlineNode\",\"type\":\"address\"},{\"name\":\"investor\",\"type\":\"address\"},{\"name\":\"blockRegister\",\"type\":\"uint256\"},{\"name\":\"blockLastPing\",\"type\":\"uint256\"},{\"name\":\"blockOnline\",\"type\":\"uint256\"},{\"name\":\"blockOnlineAcc\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"lastNode\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"nid\",\"type\":\"address\"}],\"name\":\"has\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"nodeCost\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"\",\"type\":\"address\"},{\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"nodesOf\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"nid\",\"type\":\"address\"}],\"name\":\"register\",\"outputs\":[],\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"countTotalNode\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"nid\",\"type\":\"address\"}],\"name\":\"getInvestor\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"baseCost\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"nid\",\"type\":\"address\"},{\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"register2\",\"outputs\":[],\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"minBlockTimeout\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"addr\",\"type\":\"address\"},{\"name\":\"startPos\",\"type\":\"uint256\"}],\"name\":\"getNodes\",\"outputs\":[{\"name\":\"length\",\"type\":\"uint256\"},{\"name\":\"data\",\"type\":\"address[5]\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"getInfo\",\"outputs\":[{\"name\":\"lockedBalance\",\"type\":\"uint256\"},{\"name\":\"releasedReward\",\"type\":\"uint256\"},{\"name\":\"totalNodes\",\"type\":\"uint256\"},{\"name\":\"onlineNodes\",\"type\":\"uint256\"},{\"name\":\"myNodes\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"fallback\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"nid\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"join\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"nid\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"quit\",\"type\":\"event\"}]",
+	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"nid\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"join\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"nid\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"quit\",\"type\":\"event\"},{\"stateMutability\":\"nonpayable\",\"type\":\"fallback\"},{\"inputs\":[],\"name\":\"baseCost\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"charge\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"countOnlineNode\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"countReleasedNode\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"countTotalNode\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getInfo\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"lockedBalance\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"totalNodes\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"onlineNodes\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"releaseNodes\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"nid\",\"type\":\"address\"}],\"name\":\"getInvestor\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"getReleaseInfo\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"balanceMint\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"pendingAsset\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"lockedAsset\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"releaseTime\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"nid\",\"type\":\"address\"}],\"name\":\"has\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"investor2nid\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"lastNode\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"lastOnlineNode\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"logout\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"minBlockTimeout\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"nodeCost\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"nodes\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"preNode\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"nextNode\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"preOnlineNode\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"nextOnlineNode\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"investor\",\"type\":\"address\"},{\"internalType\":\"uint8\",\"name\":\"status\",\"type\":\"uint8\"},{\"internalType\":\"uint256\",\"name\":\"blockRegister\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"blockOnline\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"blockLastWithdraw\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"balancePledge\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"balancePledgeDebt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"balanceMint\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"nid\",\"type\":\"address\"}],\"name\":\"pendingCalc\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"addresspayable\",\"name\":\"nid\",\"type\":\"address\"}],\"name\":\"register\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"addresspayable\",\"name\":\"nid\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"registerAgent\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"releaseBlocks\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"withdrawMint\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"withdrawPledge\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
 	Bin: "0x00",
 }
 
@@ -263,6 +263,37 @@ func (_Contract *ContractCallerSession) CountOnlineNode() (*big.Int, error) {
 	return _Contract.Contract.CountOnlineNode(&_Contract.CallOpts)
 }
 
+// CountReleasedNode is a free data retrieval call binding the contract method 0xe331c439.
+//
+// Solidity: function countReleasedNode() view returns(uint256)
+func (_Contract *ContractCaller) CountReleasedNode(opts *bind.CallOpts) (*big.Int, error) {
+	var out []interface{}
+	err := _Contract.contract.Call(opts, &out, "countReleasedNode")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// CountReleasedNode is a free data retrieval call binding the contract method 0xe331c439.
+//
+// Solidity: function countReleasedNode() view returns(uint256)
+func (_Contract *ContractSession) CountReleasedNode() (*big.Int, error) {
+	return _Contract.Contract.CountReleasedNode(&_Contract.CallOpts)
+}
+
+// CountReleasedNode is a free data retrieval call binding the contract method 0xe331c439.
+//
+// Solidity: function countReleasedNode() view returns(uint256)
+func (_Contract *ContractCallerSession) CountReleasedNode() (*big.Int, error) {
+	return _Contract.Contract.CountReleasedNode(&_Contract.CallOpts)
+}
+
 // CountTotalNode is a free data retrieval call binding the contract method 0x73b15098.
 //
 // Solidity: function countTotalNode() view returns(uint256)
@@ -294,78 +325,73 @@ func (_Contract *ContractCallerSession) CountTotalNode() (*big.Int, error) {
 	return _Contract.Contract.CountTotalNode(&_Contract.CallOpts)
 }
 
-// GetInfo is a free data retrieval call binding the contract method 0xffdd5cf1.
+// GetInfo is a free data retrieval call binding the contract method 0x5a9b0b89.
 //
-// Solidity: function getInfo(address addr) view returns(uint256 lockedBalance, uint256 releasedReward, uint256 totalNodes, uint256 onlineNodes, uint256 myNodes)
-func (_Contract *ContractCaller) GetInfo(opts *bind.CallOpts, addr common.Address) (struct {
-	LockedBalance  *big.Int
-	ReleasedReward *big.Int
-	TotalNodes     *big.Int
-	OnlineNodes    *big.Int
-	MyNodes        *big.Int
+// Solidity: function getInfo() view returns(uint256 lockedBalance, uint256 totalNodes, uint256 onlineNodes, uint256 releaseNodes)
+func (_Contract *ContractCaller) GetInfo(opts *bind.CallOpts) (struct {
+	LockedBalance *big.Int
+	TotalNodes    *big.Int
+	OnlineNodes   *big.Int
+	ReleaseNodes  *big.Int
 }, error) {
 	var out []interface{}
-	err := _Contract.contract.Call(opts, &out, "getInfo", addr)
+	err := _Contract.contract.Call(opts, &out, "getInfo")
 
 	outstruct := new(struct {
-		LockedBalance  *big.Int
-		ReleasedReward *big.Int
-		TotalNodes     *big.Int
-		OnlineNodes    *big.Int
-		MyNodes        *big.Int
+		LockedBalance *big.Int
+		TotalNodes    *big.Int
+		OnlineNodes   *big.Int
+		ReleaseNodes  *big.Int
 	})
 	if err != nil {
 		return *outstruct, err
 	}
 
 	outstruct.LockedBalance = *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-	outstruct.ReleasedReward = *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
-	outstruct.TotalNodes = *abi.ConvertType(out[2], new(*big.Int)).(**big.Int)
-	outstruct.OnlineNodes = *abi.ConvertType(out[3], new(*big.Int)).(**big.Int)
-	outstruct.MyNodes = *abi.ConvertType(out[4], new(*big.Int)).(**big.Int)
+	outstruct.TotalNodes = *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
+	outstruct.OnlineNodes = *abi.ConvertType(out[2], new(*big.Int)).(**big.Int)
+	outstruct.ReleaseNodes = *abi.ConvertType(out[3], new(*big.Int)).(**big.Int)
 
 	return *outstruct, err
 
 }
 
-// GetInfo is a free data retrieval call binding the contract method 0xffdd5cf1.
+// GetInfo is a free data retrieval call binding the contract method 0x5a9b0b89.
 //
-// Solidity: function getInfo(address addr) view returns(uint256 lockedBalance, uint256 releasedReward, uint256 totalNodes, uint256 onlineNodes, uint256 myNodes)
-func (_Contract *ContractSession) GetInfo(addr common.Address) (struct {
-	LockedBalance  *big.Int
-	ReleasedReward *big.Int
-	TotalNodes     *big.Int
-	OnlineNodes    *big.Int
-	MyNodes        *big.Int
+// Solidity: function getInfo() view returns(uint256 lockedBalance, uint256 totalNodes, uint256 onlineNodes, uint256 releaseNodes)
+func (_Contract *ContractSession) GetInfo() (struct {
+	LockedBalance *big.Int
+	TotalNodes    *big.Int
+	OnlineNodes   *big.Int
+	ReleaseNodes  *big.Int
 }, error) {
-	return _Contract.Contract.GetInfo(&_Contract.CallOpts, addr)
+	return _Contract.Contract.GetInfo(&_Contract.CallOpts)
 }
 
-// GetInfo is a free data retrieval call binding the contract method 0xffdd5cf1.
+// GetInfo is a free data retrieval call binding the contract method 0x5a9b0b89.
 //
-// Solidity: function getInfo(address addr) view returns(uint256 lockedBalance, uint256 releasedReward, uint256 totalNodes, uint256 onlineNodes, uint256 myNodes)
-func (_Contract *ContractCallerSession) GetInfo(addr common.Address) (struct {
-	LockedBalance  *big.Int
-	ReleasedReward *big.Int
-	TotalNodes     *big.Int
-	OnlineNodes    *big.Int
-	MyNodes        *big.Int
+// Solidity: function getInfo() view returns(uint256 lockedBalance, uint256 totalNodes, uint256 onlineNodes, uint256 releaseNodes)
+func (_Contract *ContractCallerSession) GetInfo() (struct {
+	LockedBalance *big.Int
+	TotalNodes    *big.Int
+	OnlineNodes   *big.Int
+	ReleaseNodes  *big.Int
 }, error) {
-	return _Contract.Contract.GetInfo(&_Contract.CallOpts, addr)
+	return _Contract.Contract.GetInfo(&_Contract.CallOpts)
 }
 
 // GetInvestor is a free data retrieval call binding the contract method 0x8f35a75e.
 //
-// Solidity: function getInvestor(address nid) view returns(bool)
-func (_Contract *ContractCaller) GetInvestor(opts *bind.CallOpts, nid common.Address) (bool, error) {
+// Solidity: function getInvestor(address nid) view returns(address)
+func (_Contract *ContractCaller) GetInvestor(opts *bind.CallOpts, nid common.Address) (common.Address, error) {
 	var out []interface{}
 	err := _Contract.contract.Call(opts, &out, "getInvestor", nid)
 
 	if err != nil {
-		return *new(bool), err
+		return *new(common.Address), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
 
 	return out0, err
 
@@ -373,61 +399,71 @@ func (_Contract *ContractCaller) GetInvestor(opts *bind.CallOpts, nid common.Add
 
 // GetInvestor is a free data retrieval call binding the contract method 0x8f35a75e.
 //
-// Solidity: function getInvestor(address nid) view returns(bool)
-func (_Contract *ContractSession) GetInvestor(nid common.Address) (bool, error) {
+// Solidity: function getInvestor(address nid) view returns(address)
+func (_Contract *ContractSession) GetInvestor(nid common.Address) (common.Address, error) {
 	return _Contract.Contract.GetInvestor(&_Contract.CallOpts, nid)
 }
 
 // GetInvestor is a free data retrieval call binding the contract method 0x8f35a75e.
 //
-// Solidity: function getInvestor(address nid) view returns(bool)
-func (_Contract *ContractCallerSession) GetInvestor(nid common.Address) (bool, error) {
+// Solidity: function getInvestor(address nid) view returns(address)
+func (_Contract *ContractCallerSession) GetInvestor(nid common.Address) (common.Address, error) {
 	return _Contract.Contract.GetInvestor(&_Contract.CallOpts, nid)
 }
 
-// GetNodes is a free data retrieval call binding the contract method 0xf90638a3.
+// GetReleaseInfo is a free data retrieval call binding the contract method 0x684c2611.
 //
-// Solidity: function getNodes(address addr, uint256 startPos) view returns(uint256 length, address[5] data)
-func (_Contract *ContractCaller) GetNodes(opts *bind.CallOpts, addr common.Address, startPos *big.Int) (struct {
-	Length *big.Int
-	Data   [5]common.Address
+// Solidity: function getReleaseInfo(address addr) view returns(uint256 balanceMint, uint256 pendingAsset, uint256 lockedAsset, uint256 releaseTime)
+func (_Contract *ContractCaller) GetReleaseInfo(opts *bind.CallOpts, addr common.Address) (struct {
+	BalanceMint  *big.Int
+	PendingAsset *big.Int
+	LockedAsset  *big.Int
+	ReleaseTime  *big.Int
 }, error) {
 	var out []interface{}
-	err := _Contract.contract.Call(opts, &out, "getNodes", addr, startPos)
+	err := _Contract.contract.Call(opts, &out, "getReleaseInfo", addr)
 
 	outstruct := new(struct {
-		Length *big.Int
-		Data   [5]common.Address
+		BalanceMint  *big.Int
+		PendingAsset *big.Int
+		LockedAsset  *big.Int
+		ReleaseTime  *big.Int
 	})
 	if err != nil {
 		return *outstruct, err
 	}
 
-	outstruct.Length = *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-	outstruct.Data = *abi.ConvertType(out[1], new([5]common.Address)).(*[5]common.Address)
+	outstruct.BalanceMint = *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+	outstruct.PendingAsset = *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
+	outstruct.LockedAsset = *abi.ConvertType(out[2], new(*big.Int)).(**big.Int)
+	outstruct.ReleaseTime = *abi.ConvertType(out[3], new(*big.Int)).(**big.Int)
 
 	return *outstruct, err
 
 }
 
-// GetNodes is a free data retrieval call binding the contract method 0xf90638a3.
+// GetReleaseInfo is a free data retrieval call binding the contract method 0x684c2611.
 //
-// Solidity: function getNodes(address addr, uint256 startPos) view returns(uint256 length, address[5] data)
-func (_Contract *ContractSession) GetNodes(addr common.Address, startPos *big.Int) (struct {
-	Length *big.Int
-	Data   [5]common.Address
+// Solidity: function getReleaseInfo(address addr) view returns(uint256 balanceMint, uint256 pendingAsset, uint256 lockedAsset, uint256 releaseTime)
+func (_Contract *ContractSession) GetReleaseInfo(addr common.Address) (struct {
+	BalanceMint  *big.Int
+	PendingAsset *big.Int
+	LockedAsset  *big.Int
+	ReleaseTime  *big.Int
 }, error) {
-	return _Contract.Contract.GetNodes(&_Contract.CallOpts, addr, startPos)
+	return _Contract.Contract.GetReleaseInfo(&_Contract.CallOpts, addr)
 }
 
-// GetNodes is a free data retrieval call binding the contract method 0xf90638a3.
+// GetReleaseInfo is a free data retrieval call binding the contract method 0x684c2611.
 //
-// Solidity: function getNodes(address addr, uint256 startPos) view returns(uint256 length, address[5] data)
-func (_Contract *ContractCallerSession) GetNodes(addr common.Address, startPos *big.Int) (struct {
-	Length *big.Int
-	Data   [5]common.Address
+// Solidity: function getReleaseInfo(address addr) view returns(uint256 balanceMint, uint256 pendingAsset, uint256 lockedAsset, uint256 releaseTime)
+func (_Contract *ContractCallerSession) GetReleaseInfo(addr common.Address) (struct {
+	BalanceMint  *big.Int
+	PendingAsset *big.Int
+	LockedAsset  *big.Int
+	ReleaseTime  *big.Int
 }, error) {
-	return _Contract.Contract.GetNodes(&_Contract.CallOpts, addr, startPos)
+	return _Contract.Contract.GetReleaseInfo(&_Contract.CallOpts, addr)
 }
 
 // Has is a free data retrieval call binding the contract method 0x21887c3d.
@@ -459,6 +495,37 @@ func (_Contract *ContractSession) Has(nid common.Address) (bool, error) {
 // Solidity: function has(address nid) view returns(bool)
 func (_Contract *ContractCallerSession) Has(nid common.Address) (bool, error) {
 	return _Contract.Contract.Has(&_Contract.CallOpts, nid)
+}
+
+// Investor2nid is a free data retrieval call binding the contract method 0xeb582186.
+//
+// Solidity: function investor2nid(address ) view returns(address)
+func (_Contract *ContractCaller) Investor2nid(opts *bind.CallOpts, arg0 common.Address) (common.Address, error) {
+	var out []interface{}
+	err := _Contract.contract.Call(opts, &out, "investor2nid", arg0)
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
+}
+
+// Investor2nid is a free data retrieval call binding the contract method 0xeb582186.
+//
+// Solidity: function investor2nid(address ) view returns(address)
+func (_Contract *ContractSession) Investor2nid(arg0 common.Address) (common.Address, error) {
+	return _Contract.Contract.Investor2nid(&_Contract.CallOpts, arg0)
+}
+
+// Investor2nid is a free data retrieval call binding the contract method 0xeb582186.
+//
+// Solidity: function investor2nid(address ) view returns(address)
+func (_Contract *ContractCallerSession) Investor2nid(arg0 common.Address) (common.Address, error) {
+	return _Contract.Contract.Investor2nid(&_Contract.CallOpts, arg0)
 }
 
 // LastNode is a free data retrieval call binding the contract method 0x200fc3ff.
@@ -587,31 +654,37 @@ func (_Contract *ContractCallerSession) NodeCost() (*big.Int, error) {
 
 // Nodes is a free data retrieval call binding the contract method 0x189a5a17.
 //
-// Solidity: function nodes(address ) view returns(address preNode, address nextNode, address preOnlineNode, address nextOnlineNode, address investor, uint256 blockRegister, uint256 blockLastPing, uint256 blockOnline, uint256 blockOnlineAcc)
+// Solidity: function nodes(address ) view returns(address preNode, address nextNode, address preOnlineNode, address nextOnlineNode, address investor, uint8 status, uint256 blockRegister, uint256 blockOnline, uint256 blockLastWithdraw, uint256 balancePledge, uint256 balancePledgeDebt, uint256 balanceMint)
 func (_Contract *ContractCaller) Nodes(opts *bind.CallOpts, arg0 common.Address) (struct {
-	PreNode        common.Address
-	NextNode       common.Address
-	PreOnlineNode  common.Address
-	NextOnlineNode common.Address
-	Investor       common.Address
-	BlockRegister  *big.Int
-	BlockLastPing  *big.Int
-	BlockOnline    *big.Int
-	BlockOnlineAcc *big.Int
+	PreNode           common.Address
+	NextNode          common.Address
+	PreOnlineNode     common.Address
+	NextOnlineNode    common.Address
+	Investor          common.Address
+	Status            uint8
+	BlockRegister     *big.Int
+	BlockOnline       *big.Int
+	BlockLastWithdraw *big.Int
+	BalancePledge     *big.Int
+	BalancePledgeDebt *big.Int
+	BalanceMint       *big.Int
 }, error) {
 	var out []interface{}
 	err := _Contract.contract.Call(opts, &out, "nodes", arg0)
 
 	outstruct := new(struct {
-		PreNode        common.Address
-		NextNode       common.Address
-		PreOnlineNode  common.Address
-		NextOnlineNode common.Address
-		Investor       common.Address
-		BlockRegister  *big.Int
-		BlockLastPing  *big.Int
-		BlockOnline    *big.Int
-		BlockOnlineAcc *big.Int
+		PreNode           common.Address
+		NextNode          common.Address
+		PreOnlineNode     common.Address
+		NextOnlineNode    common.Address
+		Investor          common.Address
+		Status            uint8
+		BlockRegister     *big.Int
+		BlockOnline       *big.Int
+		BlockLastWithdraw *big.Int
+		BalancePledge     *big.Int
+		BalancePledgeDebt *big.Int
+		BalanceMint       *big.Int
 	})
 	if err != nil {
 		return *outstruct, err
@@ -622,10 +695,13 @@ func (_Contract *ContractCaller) Nodes(opts *bind.CallOpts, arg0 common.Address)
 	outstruct.PreOnlineNode = *abi.ConvertType(out[2], new(common.Address)).(*common.Address)
 	outstruct.NextOnlineNode = *abi.ConvertType(out[3], new(common.Address)).(*common.Address)
 	outstruct.Investor = *abi.ConvertType(out[4], new(common.Address)).(*common.Address)
-	outstruct.BlockRegister = *abi.ConvertType(out[5], new(*big.Int)).(**big.Int)
-	outstruct.BlockLastPing = *abi.ConvertType(out[6], new(*big.Int)).(**big.Int)
+	outstruct.Status = *abi.ConvertType(out[5], new(uint8)).(*uint8)
+	outstruct.BlockRegister = *abi.ConvertType(out[6], new(*big.Int)).(**big.Int)
 	outstruct.BlockOnline = *abi.ConvertType(out[7], new(*big.Int)).(**big.Int)
-	outstruct.BlockOnlineAcc = *abi.ConvertType(out[8], new(*big.Int)).(**big.Int)
+	outstruct.BlockLastWithdraw = *abi.ConvertType(out[8], new(*big.Int)).(**big.Int)
+	outstruct.BalancePledge = *abi.ConvertType(out[9], new(*big.Int)).(**big.Int)
+	outstruct.BalancePledgeDebt = *abi.ConvertType(out[10], new(*big.Int)).(**big.Int)
+	outstruct.BalanceMint = *abi.ConvertType(out[11], new(*big.Int)).(**big.Int)
 
 	return *outstruct, err
 
@@ -633,67 +709,146 @@ func (_Contract *ContractCaller) Nodes(opts *bind.CallOpts, arg0 common.Address)
 
 // Nodes is a free data retrieval call binding the contract method 0x189a5a17.
 //
-// Solidity: function nodes(address ) view returns(address preNode, address nextNode, address preOnlineNode, address nextOnlineNode, address investor, uint256 blockRegister, uint256 blockLastPing, uint256 blockOnline, uint256 blockOnlineAcc)
+// Solidity: function nodes(address ) view returns(address preNode, address nextNode, address preOnlineNode, address nextOnlineNode, address investor, uint8 status, uint256 blockRegister, uint256 blockOnline, uint256 blockLastWithdraw, uint256 balancePledge, uint256 balancePledgeDebt, uint256 balanceMint)
 func (_Contract *ContractSession) Nodes(arg0 common.Address) (struct {
-	PreNode        common.Address
-	NextNode       common.Address
-	PreOnlineNode  common.Address
-	NextOnlineNode common.Address
-	Investor       common.Address
-	BlockRegister  *big.Int
-	BlockLastPing  *big.Int
-	BlockOnline    *big.Int
-	BlockOnlineAcc *big.Int
+	PreNode           common.Address
+	NextNode          common.Address
+	PreOnlineNode     common.Address
+	NextOnlineNode    common.Address
+	Investor          common.Address
+	Status            uint8
+	BlockRegister     *big.Int
+	BlockOnline       *big.Int
+	BlockLastWithdraw *big.Int
+	BalancePledge     *big.Int
+	BalancePledgeDebt *big.Int
+	BalanceMint       *big.Int
 }, error) {
 	return _Contract.Contract.Nodes(&_Contract.CallOpts, arg0)
 }
 
 // Nodes is a free data retrieval call binding the contract method 0x189a5a17.
 //
-// Solidity: function nodes(address ) view returns(address preNode, address nextNode, address preOnlineNode, address nextOnlineNode, address investor, uint256 blockRegister, uint256 blockLastPing, uint256 blockOnline, uint256 blockOnlineAcc)
+// Solidity: function nodes(address ) view returns(address preNode, address nextNode, address preOnlineNode, address nextOnlineNode, address investor, uint8 status, uint256 blockRegister, uint256 blockOnline, uint256 blockLastWithdraw, uint256 balancePledge, uint256 balancePledgeDebt, uint256 balanceMint)
 func (_Contract *ContractCallerSession) Nodes(arg0 common.Address) (struct {
-	PreNode        common.Address
-	NextNode       common.Address
-	PreOnlineNode  common.Address
-	NextOnlineNode common.Address
-	Investor       common.Address
-	BlockRegister  *big.Int
-	BlockLastPing  *big.Int
-	BlockOnline    *big.Int
-	BlockOnlineAcc *big.Int
+	PreNode           common.Address
+	NextNode          common.Address
+	PreOnlineNode     common.Address
+	NextOnlineNode    common.Address
+	Investor          common.Address
+	Status            uint8
+	BlockRegister     *big.Int
+	BlockOnline       *big.Int
+	BlockLastWithdraw *big.Int
+	BalancePledge     *big.Int
+	BalancePledgeDebt *big.Int
+	BalanceMint       *big.Int
 }, error) {
 	return _Contract.Contract.Nodes(&_Contract.CallOpts, arg0)
 }
 
-// NodesOf is a free data retrieval call binding the contract method 0x367d5e62.
+// PendingCalc is a free data retrieval call binding the contract method 0x69438d7b.
 //
-// Solidity: function nodesOf(address , uint256 ) view returns(address)
-func (_Contract *ContractCaller) NodesOf(opts *bind.CallOpts, arg0 common.Address, arg1 *big.Int) (common.Address, error) {
+// Solidity: function pendingCalc(address nid) view returns(uint256)
+func (_Contract *ContractCaller) PendingCalc(opts *bind.CallOpts, nid common.Address) (*big.Int, error) {
 	var out []interface{}
-	err := _Contract.contract.Call(opts, &out, "nodesOf", arg0, arg1)
+	err := _Contract.contract.Call(opts, &out, "pendingCalc", nid)
 
 	if err != nil {
-		return *new(common.Address), err
+		return *new(*big.Int), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
 
 	return out0, err
 
 }
 
-// NodesOf is a free data retrieval call binding the contract method 0x367d5e62.
+// PendingCalc is a free data retrieval call binding the contract method 0x69438d7b.
 //
-// Solidity: function nodesOf(address , uint256 ) view returns(address)
-func (_Contract *ContractSession) NodesOf(arg0 common.Address, arg1 *big.Int) (common.Address, error) {
-	return _Contract.Contract.NodesOf(&_Contract.CallOpts, arg0, arg1)
+// Solidity: function pendingCalc(address nid) view returns(uint256)
+func (_Contract *ContractSession) PendingCalc(nid common.Address) (*big.Int, error) {
+	return _Contract.Contract.PendingCalc(&_Contract.CallOpts, nid)
 }
 
-// NodesOf is a free data retrieval call binding the contract method 0x367d5e62.
+// PendingCalc is a free data retrieval call binding the contract method 0x69438d7b.
 //
-// Solidity: function nodesOf(address , uint256 ) view returns(address)
-func (_Contract *ContractCallerSession) NodesOf(arg0 common.Address, arg1 *big.Int) (common.Address, error) {
-	return _Contract.Contract.NodesOf(&_Contract.CallOpts, arg0, arg1)
+// Solidity: function pendingCalc(address nid) view returns(uint256)
+func (_Contract *ContractCallerSession) PendingCalc(nid common.Address) (*big.Int, error) {
+	return _Contract.Contract.PendingCalc(&_Contract.CallOpts, nid)
+}
+
+// ReleaseBlocks is a free data retrieval call binding the contract method 0x70d1d031.
+//
+// Solidity: function releaseBlocks() view returns(uint256)
+func (_Contract *ContractCaller) ReleaseBlocks(opts *bind.CallOpts) (*big.Int, error) {
+	var out []interface{}
+	err := _Contract.contract.Call(opts, &out, "releaseBlocks")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// ReleaseBlocks is a free data retrieval call binding the contract method 0x70d1d031.
+//
+// Solidity: function releaseBlocks() view returns(uint256)
+func (_Contract *ContractSession) ReleaseBlocks() (*big.Int, error) {
+	return _Contract.Contract.ReleaseBlocks(&_Contract.CallOpts)
+}
+
+// ReleaseBlocks is a free data retrieval call binding the contract method 0x70d1d031.
+//
+// Solidity: function releaseBlocks() view returns(uint256)
+func (_Contract *ContractCallerSession) ReleaseBlocks() (*big.Int, error) {
+	return _Contract.Contract.ReleaseBlocks(&_Contract.CallOpts)
+}
+
+// Charge is a paid mutator transaction binding the contract method 0x55161913.
+//
+// Solidity: function charge() payable returns()
+func (_Contract *ContractTransactor) Charge(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _Contract.contract.Transact(opts, "charge")
+}
+
+// Charge is a paid mutator transaction binding the contract method 0x55161913.
+//
+// Solidity: function charge() payable returns()
+func (_Contract *ContractSession) Charge() (*types.Transaction, error) {
+	return _Contract.Contract.Charge(&_Contract.TransactOpts)
+}
+
+// Charge is a paid mutator transaction binding the contract method 0x55161913.
+//
+// Solidity: function charge() payable returns()
+func (_Contract *ContractTransactorSession) Charge() (*types.Transaction, error) {
+	return _Contract.Contract.Charge(&_Contract.TransactOpts)
+}
+
+// Logout is a paid mutator transaction binding the contract method 0x1f3c99c3.
+//
+// Solidity: function logout() returns()
+func (_Contract *ContractTransactor) Logout(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _Contract.contract.Transact(opts, "logout")
+}
+
+// Logout is a paid mutator transaction binding the contract method 0x1f3c99c3.
+//
+// Solidity: function logout() returns()
+func (_Contract *ContractSession) Logout() (*types.Transaction, error) {
+	return _Contract.Contract.Logout(&_Contract.TransactOpts)
+}
+
+// Logout is a paid mutator transaction binding the contract method 0x1f3c99c3.
+//
+// Solidity: function logout() returns()
+func (_Contract *ContractTransactorSession) Logout() (*types.Transaction, error) {
+	return _Contract.Contract.Logout(&_Contract.TransactOpts)
 }
 
 // Register is a paid mutator transaction binding the contract method 0x4420e486.
@@ -717,25 +872,67 @@ func (_Contract *ContractTransactorSession) Register(nid common.Address) (*types
 	return _Contract.Contract.Register(&_Contract.TransactOpts, nid)
 }
 
-// Register2 is a paid mutator transaction binding the contract method 0x960d59f8.
+// RegisterAgent is a paid mutator transaction binding the contract method 0x677321da.
 //
-// Solidity: function register2(address nid, address owner) payable returns()
-func (_Contract *ContractTransactor) Register2(opts *bind.TransactOpts, nid common.Address, owner common.Address) (*types.Transaction, error) {
-	return _Contract.contract.Transact(opts, "register2", nid, owner)
+// Solidity: function registerAgent(address nid, address owner) payable returns()
+func (_Contract *ContractTransactor) RegisterAgent(opts *bind.TransactOpts, nid common.Address, owner common.Address) (*types.Transaction, error) {
+	return _Contract.contract.Transact(opts, "registerAgent", nid, owner)
 }
 
-// Register2 is a paid mutator transaction binding the contract method 0x960d59f8.
+// RegisterAgent is a paid mutator transaction binding the contract method 0x677321da.
 //
-// Solidity: function register2(address nid, address owner) payable returns()
-func (_Contract *ContractSession) Register2(nid common.Address, owner common.Address) (*types.Transaction, error) {
-	return _Contract.Contract.Register2(&_Contract.TransactOpts, nid, owner)
+// Solidity: function registerAgent(address nid, address owner) payable returns()
+func (_Contract *ContractSession) RegisterAgent(nid common.Address, owner common.Address) (*types.Transaction, error) {
+	return _Contract.Contract.RegisterAgent(&_Contract.TransactOpts, nid, owner)
 }
 
-// Register2 is a paid mutator transaction binding the contract method 0x960d59f8.
+// RegisterAgent is a paid mutator transaction binding the contract method 0x677321da.
 //
-// Solidity: function register2(address nid, address owner) payable returns()
-func (_Contract *ContractTransactorSession) Register2(nid common.Address, owner common.Address) (*types.Transaction, error) {
-	return _Contract.Contract.Register2(&_Contract.TransactOpts, nid, owner)
+// Solidity: function registerAgent(address nid, address owner) payable returns()
+func (_Contract *ContractTransactorSession) RegisterAgent(nid common.Address, owner common.Address) (*types.Transaction, error) {
+	return _Contract.Contract.RegisterAgent(&_Contract.TransactOpts, nid, owner)
+}
+
+// WithdrawMint is a paid mutator transaction binding the contract method 0xa8365f61.
+//
+// Solidity: function withdrawMint() returns()
+func (_Contract *ContractTransactor) WithdrawMint(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _Contract.contract.Transact(opts, "withdrawMint")
+}
+
+// WithdrawMint is a paid mutator transaction binding the contract method 0xa8365f61.
+//
+// Solidity: function withdrawMint() returns()
+func (_Contract *ContractSession) WithdrawMint() (*types.Transaction, error) {
+	return _Contract.Contract.WithdrawMint(&_Contract.TransactOpts)
+}
+
+// WithdrawMint is a paid mutator transaction binding the contract method 0xa8365f61.
+//
+// Solidity: function withdrawMint() returns()
+func (_Contract *ContractTransactorSession) WithdrawMint() (*types.Transaction, error) {
+	return _Contract.Contract.WithdrawMint(&_Contract.TransactOpts)
+}
+
+// WithdrawPledge is a paid mutator transaction binding the contract method 0x1209f7ed.
+//
+// Solidity: function withdrawPledge() returns()
+func (_Contract *ContractTransactor) WithdrawPledge(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _Contract.contract.Transact(opts, "withdrawPledge")
+}
+
+// WithdrawPledge is a paid mutator transaction binding the contract method 0x1209f7ed.
+//
+// Solidity: function withdrawPledge() returns()
+func (_Contract *ContractSession) WithdrawPledge() (*types.Transaction, error) {
+	return _Contract.Contract.WithdrawPledge(&_Contract.TransactOpts)
+}
+
+// WithdrawPledge is a paid mutator transaction binding the contract method 0x1209f7ed.
+//
+// Solidity: function withdrawPledge() returns()
+func (_Contract *ContractTransactorSession) WithdrawPledge() (*types.Transaction, error) {
+	return _Contract.Contract.WithdrawPledge(&_Contract.TransactOpts)
 }
 
 // Fallback is a paid mutator transaction binding the contract fallback function.
