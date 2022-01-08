@@ -264,7 +264,7 @@ func (c *Clique) verifyHeader(chain consensus.ChainHeaderReader, header *types.H
 	if header.Number == nil {
 		return errUnknownBlock
 	}
-	number := header.Number.Uint64()
+	// number := header.Number.Uint64()
 
 	// Don't waste time checking blocks from the future
 	if header.Time > uint64(time.Now().Unix()) {
@@ -307,11 +307,11 @@ func (c *Clique) verifyHeader(chain consensus.ChainHeaderReader, header *types.H
 		return errInvalidUncleHash
 	}
 	// Ensure that the block's difficulty is meaningful (may not be correct at this point)
-	if number > 0 {
-		if header.Difficulty == nil || (header.Difficulty.Cmp(diffInTurn) != 0 && header.Difficulty.Cmp(diffNoTurn) != 0) {
-			return errInvalidDifficulty
-		}
-	}
+	//if number > 0 {
+	//	if header.Difficulty == nil || (header.Difficulty.Cmp(diffInTurn) != 0 && header.Difficulty.Cmp(diffNoTurn) != 0) {
+	//		return errInvalidDifficulty
+	//	}
+	//}
 	// Verify that the gas limit is <= 2^63-1
 	cap := uint64(0x7fffffffffffffff)
 	if header.GasLimit > cap {
@@ -499,7 +499,7 @@ func (c *Clique) verifySeal(chain consensus.ChainHeaderReader, header *types.Hea
 	} else {
 		parent = chain.GetHeader(header.ParentHash, number-1)
 	}
-	witness, err := c.lookup(header.Time, parent)
+	witness, _, _, err := c.lookup(header.Time, parent)
 	if err != nil {
 		// log.Warn("Verify Seal", "info", err)
 	} else if witness != signer {
@@ -533,7 +533,7 @@ func (c *Clique) verifySeal(chain consensus.ChainHeaderReader, header *types.Hea
 // Prepare implements consensus.Engine, preparing all the consensus fields of the
 // header for running the transactions on top.
 func (c *Clique) Prepare(chain consensus.ChainHeaderReader, header *types.Header) error {
-	header.Nonce = types.BlockNonce{}
+	// header.Nonce = types.BlockNonce{}
 	number := header.Number.Uint64()
 	if len(header.Extra) < extraVanity {
 		header.Extra = append(header.Extra, bytes.Repeat([]byte{0x00}, extraVanity-len(header.Extra))...)
@@ -544,7 +544,10 @@ func (c *Clique) Prepare(chain consensus.ChainHeaderReader, header *types.Header
 	if parent == nil {
 		return consensus.ErrUnknownAncestor
 	}
-	header.Difficulty = c.CalcDifficulty(chain, header.Time, parent)
+	if header.Difficulty == nil {
+		header.Difficulty = common.Big0
+	}
+	//header.Difficulty = c.CalcDifficulty(chain, header.Time, parent)
 	//header.Witness = c.signer
 	return nil
 
@@ -663,7 +666,7 @@ func (c *Clique) Finalize(chain consensus.ChainHeaderReader, header *types.Heade
 				state.SetState(params.MasternodeContractAddress, countOnlineNodeKey, countOnlineNodeVal)
 				// nodes[nid].blockOnline = 0
 				state.SetState(params.MasternodeContractAddress, blockOnlineKey, common.Hash{})
-				log.Warn("Offline setting", "nid", preNid, "online", countOnlineNode.String())
+				log.Warn("Offline setting", "nid", preNid, "online", countOnlineNode.String(), "number", header.Number.Uint64())
 				// reset preOnlineNode
 				preOnlineNodeKey := getNodeAttrKey(preNid.Bytes()[:], 2)
 				preOnlineNodeVal := state.GetState(params.MasternodeContractAddress, preOnlineNodeKey)
@@ -855,14 +858,14 @@ func (c *Clique) checkTime(lastBlock *types.Block, now uint64) error {
 	return ErrWaitForPrevBlock
 }
 
-func (c *Clique) lookup(now uint64, lastBlock *types.Header) (common.Address, error) {
+func (c *Clique) lookup(now uint64, lastBlock *types.Header) (common.Address, common.Address, *big.Int, error) {
 	quotientsLast := lastBlock.Time / c.config.Period
 	quotients := now / c.config.Period
 	if quotientsLast >= quotients {
-		return common.Address{}, fmt.Errorf("[LOOKUP] Invalid Period")
+		return common.Address{}, common.Address{}, big.NewInt(0), fmt.Errorf("[LOOKUP] Invalid Period")
 	}
 	if lastBlock.Time > now {
-		return common.Address{}, fmt.Errorf("[LOOKUP] Invalid lastBlock.Time")
+		return common.Address{}, common.Address{}, big.NewInt(0), fmt.Errorf("[LOOKUP] Invalid lastBlock.Time")
 	}
 	fixedNumber := uint64(0)
 	if (lastBlock.Number.Uint64() + 1) >= delayBlocks {
@@ -871,33 +874,41 @@ func (c *Clique) lookup(now uint64, lastBlock *types.Header) (common.Address, er
 	if fixedNumber != c.cacheNumber || fixedNumber == 0 {
 		nodes, err := c.masternodeListFn(big.NewInt(int64(fixedNumber)))
 		if err != nil {
-			return common.Address{}, fmt.Errorf("Failed to get masternodes: %s, Number: %d", err, fixedNumber)
+			return common.Address{}, common.Address{}, big.NewInt(0), fmt.Errorf("Failed to get masternodes: %s, Number: %d", err, fixedNumber)
 		}
 		c.cacheNumber = fixedNumber
 		c.cacheNodes = nodes
 	}
-	nextNth := quotients % uint64(len(c.cacheNodes))
-	return c.cacheNodes[nextNth], nil
+	length := uint64(len(c.cacheNodes))
+	nextNth := quotients % length
+	nextNth2 := nextNth + 1
+	if nextNth2 == length {
+		nextNth2 = 0
+	}
+	nth := length*10000 + nextNth
+	index := new(big.Int).Mul(big.NewInt(int64(fixedNumber)), big.NewInt(100000000))
+	index.Add(index, big.NewInt(int64(nth)))
+	return c.cacheNodes[nextNth], c.cacheNodes[nextNth2], index, nil
 }
 
-func (c *Clique) CheckWitness(lastBlock *types.Block, now int64) (common.Address, error) {
+func (c *Clique) CheckWitness(lastBlock *types.Block, now int64) (common.Address, common.Address, *big.Int, error) {
 	if err := c.checkTime(lastBlock, uint64(now)); err != nil {
-		return common.Address{}, err
+		return common.Address{}, common.Address{}, big.NewInt(0), err
 	}
 
-	witness, err := c.lookup(uint64(now), lastBlock.Header())
+	witness, witnessNext, misc, err := c.lookup(uint64(now), lastBlock.Header())
 	if err != nil {
-		return common.Address{}, err
+		return common.Address{}, common.Address{}, big.NewInt(0), err
 	}
 
 	for _, signer := range c.witnesses {
 		if witness == signer {
 			c.setSigner(signer)
 			log.Info("🐸 Found my witness", "witness", witness.String())
-			return signer, nil
+			return signer, witnessNext, misc, nil
 		}
 	}
-	return common.Address{}, ErrInvalidBlockWitness
+	return common.Address{}, common.Address{}, big.NewInt(0), ErrInvalidBlockWitness
 }
 
 func (c *Clique) getPreNid(fixedNumber uint64, nid common.Address) (common.Address, error) {

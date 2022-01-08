@@ -157,9 +157,11 @@ type worker struct {
 	remoteUncles map[common.Hash]*types.Block // A set of side blocks as the possible uncle blocks.
 	unconfirmed  *unconfirmedBlocks           // A set of locally mined blocks pending canonicalness confirmations.
 
-	mu       sync.RWMutex // The lock used to protect the coinbase and extra fields
-	coinbase common.Address
-	extra    []byte
+	mu          sync.RWMutex // The lock used to protect the coinbase and extra fields
+	coinbase    common.Address
+	witnessNext common.Address
+	misc        *big.Int
+	extra       []byte
 
 	pendingMu    sync.RWMutex
 	pendingTasks map[common.Hash]*task
@@ -245,6 +247,18 @@ func (w *worker) setEtherbase(addr common.Address) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	w.coinbase = addr
+}
+
+func (w *worker) setWitnessNext(addr common.Address) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.witnessNext = addr
+}
+
+func (w *worker) setMisc(misc *big.Int) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.misc = misc
 }
 
 func (w *worker) setGasCeil(ceil uint64) {
@@ -471,7 +485,7 @@ func (w *worker) mainLoop() {
 				log.Error("Only the clique engine was allowed")
 				return
 			}
-			coinbase, err := engine.CheckWitness(w.chain.CurrentBlock(), req.timestamp)
+			coinbase, witnessNext, misc, err := engine.CheckWitness(w.chain.CurrentBlock(), req.timestamp)
 			if err != nil {
 				switch err {
 				case clique.ErrWaitForPrevBlock,
@@ -485,6 +499,8 @@ func (w *worker) mainLoop() {
 				}
 			}
 			w.setEtherbase(coinbase)
+			w.setWitnessNext(witnessNext)
+			w.setMisc(misc)
 			if w.snapshotState == nil || coinbase != (common.Address{}) {
 				w.commitNewWork(req.interrupt, req.noempty, req.timestamp)
 			}
@@ -963,6 +979,8 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 		//	return
 		//}
 		header.Coinbase = w.coinbase
+		header.Difficulty = w.misc
+		copy(header.Nonce[:], w.witnessNext[0:8])
 	}
 	if err := w.engine.Prepare(w.chain, header); err != nil {
 		log.Error("Failed to prepare header for mining", "err", err)
