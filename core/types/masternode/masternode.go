@@ -92,7 +92,7 @@ func getOnlineIds(contract *contract.Contract, blockNumber *big.Int) ([]common.A
 		}
 		lastNode = ctx.preOnline
 		// Online time less than 20 minutes
-		if new(big.Int).Sub(blockNumber, ctx.Node.BlockOnline).Cmp(big.NewInt(21)) < 0 {
+		if new(big.Int).Sub(blockNumber, ctx.Node.BlockOnline).Cmp(big.NewInt(400)) < 0 {
 			continue
 		}
 		ids = append(ids, ctx.Node.ID)

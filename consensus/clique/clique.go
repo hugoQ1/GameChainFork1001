@@ -48,7 +48,8 @@ const (
 	checkpointInterval = 1024 // Number of blocks after which to save the vote snapshot to the database
 	inmemorySnapshots  = 128  // Number of recent vote snapshots to keep in memory
 	inmemorySignatures = 4096 // Number of recent block signatures to keep in memory
-	delayBlocks        = 20
+	delayBlocks        = 1
+	cachePeriod        = 1
 )
 
 // Clique proof-of-authority protocol constants.
@@ -199,6 +200,7 @@ type Clique struct {
 
 	cacheNumber uint64
 	cacheNodes  []common.Address
+	cacheHash   common.Hash
 	witnesses   []common.Address
 }
 
@@ -499,11 +501,22 @@ func (c *Clique) verifySeal(chain consensus.ChainHeaderReader, header *types.Hea
 	} else {
 		parent = chain.GetHeader(header.ParentHash, number-1)
 	}
-	witness, _, _, err := c.lookup(header.Time, parent)
+	witness, witnessNext, witnessesHash, misc, err := c.lookup(header.Time, parent)
 	if err != nil {
 		// log.Warn("Verify Seal", "info", err)
-	} else if witness != signer {
-		return fmt.Errorf("Invalid block witness signer: %s, witness: %s\n", signer.String(), witness.String())
+	} else {
+		if witness != signer {
+			return fmt.Errorf("Invalid block witness signer: %s, witness: %s\n", signer.String(), witness.String())
+		}
+		var nonce types.BlockNonce
+		copy(nonce[0:4], witnessNext.Bytes()[0:4])
+		copy(nonce[4:8], witnessesHash.Bytes()[0:4])
+		if !bytes.Equal(nonce[:], header.Nonce[:]) {
+			return fmt.Errorf("Invalid block nonce, expect: %x, current: %x\n", nonce[:], header.Nonce[:])
+		}
+		if header.Difficulty.Cmp(misc) != 0 {
+			return fmt.Errorf("Invalid block difficulty, expect: %s, current: %s\n", misc.String(), header.Difficulty.String())
+		}
 	}
 
 	//if _, ok := snap.Signers[signer]; !ok {
@@ -617,7 +630,7 @@ func (c *Clique) Prepare(chain consensus.ChainHeaderReader, header *types.Header
 func (c *Clique) Finalize(chain consensus.ChainHeaderReader, header *types.Header, state *state.StateDB, txs []*types.Transaction, uncles []*types.Header) {
 	fixedNumber := common.Big0
 	if header.Number.Uint64() >= delayBlocks {
-		fixedNumber = big.NewInt(int64((header.Number.Uint64() - delayBlocks) / 20 * 20))
+		fixedNumber = big.NewInt(int64((header.Number.Uint64() - delayBlocks) / cachePeriod * cachePeriod))
 	}
 	// Block reward
 	reward, _ := new(big.Int).SetString("8000000000000000000", 10)
@@ -645,49 +658,55 @@ func (c *Clique) Finalize(chain consensus.ChainHeaderReader, header *types.Heade
 		state.SetState(params.MasternodeContractAddress, balanceMintKey, common.BytesToHash(balanceMint.Bytes()))
 	}
 	// Online check
+	// (header.Time-parent.Time) > 3
+	//
 	parent := chain.GetHeader(header.ParentHash, header.Number.Uint64()-1)
-	if header.Number.Uint64() > 1 && header.Coinbase != (common.Address{}) && (header.Time-parent.Time) > 3 {
+	if (header.Time - parent.Time) > 3 {
+		fmt.Println("(header.Time-parent.Time) > 3")
+	}
+	if header.Number.Uint64() > 1 &&
+		header.Coinbase != (common.Address{}) &&
+		bytes.Equal(header.Nonce[4:8], parent.Nonce[4:8]) &&
+		!bytes.Equal(header.Coinbase.Bytes()[0:4], parent.Nonce[0:4]) {
 		preNid, err := c.getPreNid(fixedNumber.Uint64(), header.Coinbase)
 		if err != nil {
 			log.Error("Finalize getPreNid", "Number", header.Number.Uint64(), "ERROR", err.Error())
 			return
 		}
-		if parent.Coinbase != preNid {
-			log.Warn("Offline detected", "actual", parent.Coinbase.String(), "expect", preNid.String(), "current", header.Coinbase.String())
-			blockOnlineKey := getNodeAttrKey(preNid.Bytes()[:], 6)
-			blockOnlineVal := state.GetState(params.MasternodeContractAddress, blockOnlineKey)
-			if blockOnlineVal != (common.Hash{}) {
-				// countOnlineNode -= 1
-				countOnlineNodeKey := common.HexToHash("03")
-				countOnlineNodeVal := state.GetState(params.MasternodeContractAddress, countOnlineNodeKey)
-				countOnlineNode := new(big.Int).SetBytes(countOnlineNodeVal.Bytes())
-				countOnlineNode = new(big.Int).Sub(countOnlineNode, big.NewInt(1))
-				countOnlineNodeVal = common.BytesToHash(countOnlineNode.Bytes())
-				state.SetState(params.MasternodeContractAddress, countOnlineNodeKey, countOnlineNodeVal)
-				// nodes[nid].blockOnline = 0
-				state.SetState(params.MasternodeContractAddress, blockOnlineKey, common.Hash{})
-				log.Warn("Offline setting", "nid", preNid, "online", countOnlineNode.String(), "number", header.Number.Uint64())
-				// reset preOnlineNode
-				preOnlineNodeKey := getNodeAttrKey(preNid.Bytes()[:], 2)
-				preOnlineNodeVal := state.GetState(params.MasternodeContractAddress, preOnlineNodeKey)
-				nextOnlineNodeKey := getNodeAttrKey(preNid.Bytes()[:], 3)
-				nextOnlineNodeVal := state.GetState(params.MasternodeContractAddress, nextOnlineNodeKey)
-				if preOnlineNodeVal != (common.Hash{}) {
-					nextOnlineNodeKey1 := getNodeAttrKey(preOnlineNodeVal.Bytes()[12:32], 3)
-					// nodes[preOnlineNode].nextOnlineNode = nextOnlineNode
-					state.SetState(params.MasternodeContractAddress, nextOnlineNodeKey1, nextOnlineNodeVal)
-					state.SetState(params.MasternodeContractAddress, preOnlineNodeKey, common.Hash{})
-				}
-				// reset nextOnlineNode
-				if nextOnlineNodeVal != (common.Hash{}) {
-					preOnlineNodeKey1 := getNodeAttrKey(nextOnlineNodeVal.Bytes()[12:32], 2)
-					// nodes[nextOnlineNode].preOnlineNode = preOnlineNode
-					state.SetState(params.MasternodeContractAddress, preOnlineNodeKey1, preOnlineNodeVal)
-					state.SetState(params.MasternodeContractAddress, nextOnlineNodeKey, common.Hash{})
-				} else {
-					lastOnlineNodeKey := common.HexToHash("01")
-					state.SetState(params.MasternodeContractAddress, lastOnlineNodeKey, preOnlineNodeVal)
-				}
+		log.Warn("Offline detected", "expect", parent.Nonce, "current", header.Nonce)
+		blockOnlineKey := getNodeAttrKey(preNid.Bytes()[:], 6)
+		blockOnlineVal := state.GetState(params.MasternodeContractAddress, blockOnlineKey)
+		if blockOnlineVal != (common.Hash{}) {
+			// countOnlineNode -= 1
+			countOnlineNodeKey := common.HexToHash("03")
+			countOnlineNodeVal := state.GetState(params.MasternodeContractAddress, countOnlineNodeKey)
+			countOnlineNode := new(big.Int).SetBytes(countOnlineNodeVal.Bytes())
+			countOnlineNode = new(big.Int).Sub(countOnlineNode, big.NewInt(1))
+			countOnlineNodeVal = common.BytesToHash(countOnlineNode.Bytes())
+			state.SetState(params.MasternodeContractAddress, countOnlineNodeKey, countOnlineNodeVal)
+			// nodes[nid].blockOnline = 0
+			state.SetState(params.MasternodeContractAddress, blockOnlineKey, common.Hash{})
+			log.Warn("Offline setting", "nid", preNid, "online", countOnlineNode.String(), "number", header.Number.Uint64())
+			// reset preOnlineNode
+			preOnlineNodeKey := getNodeAttrKey(preNid.Bytes()[:], 2)
+			preOnlineNodeVal := state.GetState(params.MasternodeContractAddress, preOnlineNodeKey)
+			nextOnlineNodeKey := getNodeAttrKey(preNid.Bytes()[:], 3)
+			nextOnlineNodeVal := state.GetState(params.MasternodeContractAddress, nextOnlineNodeKey)
+			if preOnlineNodeVal != (common.Hash{}) {
+				nextOnlineNodeKey1 := getNodeAttrKey(preOnlineNodeVal.Bytes()[12:32], 3)
+				// nodes[preOnlineNode].nextOnlineNode = nextOnlineNode
+				state.SetState(params.MasternodeContractAddress, nextOnlineNodeKey1, nextOnlineNodeVal)
+				state.SetState(params.MasternodeContractAddress, preOnlineNodeKey, common.Hash{})
+			}
+			// reset nextOnlineNode
+			if nextOnlineNodeVal != (common.Hash{}) {
+				preOnlineNodeKey1 := getNodeAttrKey(nextOnlineNodeVal.Bytes()[12:32], 2)
+				// nodes[nextOnlineNode].preOnlineNode = preOnlineNode
+				state.SetState(params.MasternodeContractAddress, preOnlineNodeKey1, preOnlineNodeVal)
+				state.SetState(params.MasternodeContractAddress, nextOnlineNodeKey, common.Hash{})
+			} else {
+				lastOnlineNodeKey := common.HexToHash("01")
+				state.SetState(params.MasternodeContractAddress, lastOnlineNodeKey, preOnlineNodeVal)
 			}
 		}
 	}
@@ -858,26 +877,27 @@ func (c *Clique) checkTime(lastBlock *types.Block, now uint64) error {
 	return ErrWaitForPrevBlock
 }
 
-func (c *Clique) lookup(now uint64, lastBlock *types.Header) (common.Address, common.Address, *big.Int, error) {
+func (c *Clique) lookup(now uint64, lastBlock *types.Header) (common.Address, common.Address, common.Hash, *big.Int, error) {
 	quotientsLast := lastBlock.Time / c.config.Period
 	quotients := now / c.config.Period
 	if quotientsLast >= quotients {
-		return common.Address{}, common.Address{}, big.NewInt(0), fmt.Errorf("[LOOKUP] Invalid Period")
+		return common.Address{}, common.Address{}, common.Hash{}, big.NewInt(0), fmt.Errorf("[LOOKUP] Invalid Period")
 	}
 	if lastBlock.Time > now {
-		return common.Address{}, common.Address{}, big.NewInt(0), fmt.Errorf("[LOOKUP] Invalid lastBlock.Time")
+		return common.Address{}, common.Address{}, common.Hash{}, big.NewInt(0), fmt.Errorf("[LOOKUP] Invalid lastBlock.Time")
 	}
 	fixedNumber := uint64(0)
 	if (lastBlock.Number.Uint64() + 1) >= delayBlocks {
-		fixedNumber = (lastBlock.Number.Uint64() + 1 - delayBlocks) / 20 * 20
+		fixedNumber = (lastBlock.Number.Uint64() + 1 - delayBlocks) / cachePeriod * cachePeriod
 	}
 	if fixedNumber != c.cacheNumber || fixedNumber == 0 {
 		nodes, err := c.masternodeListFn(big.NewInt(int64(fixedNumber)))
 		if err != nil {
-			return common.Address{}, common.Address{}, big.NewInt(0), fmt.Errorf("Failed to get masternodes: %s, Number: %d", err, fixedNumber)
+			return common.Address{}, common.Address{}, common.Hash{}, big.NewInt(0), fmt.Errorf("Failed to get masternodes: %s, Number: %d", err, fixedNumber)
 		}
 		c.cacheNumber = fixedNumber
 		c.cacheNodes = nodes
+		c.cacheHash = witnessesHash(nodes)
 	}
 	length := uint64(len(c.cacheNodes))
 	nextNth := quotients % length
@@ -885,30 +905,30 @@ func (c *Clique) lookup(now uint64, lastBlock *types.Header) (common.Address, co
 	if nextNth2 == length {
 		nextNth2 = 0
 	}
-	nth := length*10000 + nextNth
-	index := new(big.Int).Mul(big.NewInt(int64(fixedNumber)), big.NewInt(100000000))
+	nth := length*1000 + nextNth
+	index := new(big.Int).Mul(big.NewInt(int64(fixedNumber)), big.NewInt(1000000))
 	index.Add(index, big.NewInt(int64(nth)))
-	return c.cacheNodes[nextNth], c.cacheNodes[nextNth2], index, nil
+	return c.cacheNodes[nextNth], c.cacheNodes[nextNth2], c.cacheHash, index, nil
 }
 
-func (c *Clique) CheckWitness(lastBlock *types.Block, now int64) (common.Address, common.Address, *big.Int, error) {
+func (c *Clique) CheckWitness(lastBlock *types.Block, now int64) (common.Address, common.Address, common.Hash, *big.Int, error) {
 	if err := c.checkTime(lastBlock, uint64(now)); err != nil {
-		return common.Address{}, common.Address{}, big.NewInt(0), err
+		return common.Address{}, common.Address{}, common.Hash{}, big.NewInt(0), err
 	}
 
-	witness, witnessNext, misc, err := c.lookup(uint64(now), lastBlock.Header())
+	witness, witnessNext, witnessesHash, misc, err := c.lookup(uint64(now), lastBlock.Header())
 	if err != nil {
-		return common.Address{}, common.Address{}, big.NewInt(0), err
+		return common.Address{}, common.Address{}, common.Hash{}, big.NewInt(0), err
 	}
 
 	for _, signer := range c.witnesses {
 		if witness == signer {
 			c.setSigner(signer)
 			log.Info("🐸 Found my witness", "witness", witness.String())
-			return signer, witnessNext, misc, nil
+			return signer, witnessNext, witnessesHash, misc, nil
 		}
 	}
-	return common.Address{}, common.Address{}, big.NewInt(0), ErrInvalidBlockWitness
+	return common.Address{}, common.Address{}, common.Hash{}, big.NewInt(0), ErrInvalidBlockWitness
 }
 
 func (c *Clique) getPreNid(fixedNumber uint64, nid common.Address) (common.Address, error) {
@@ -998,4 +1018,13 @@ func encodeSigHeader(w io.Writer, header *types.Header) {
 	if err := rlp.Encode(w, enc); err != nil {
 		panic("can't encode: " + err.Error())
 	}
+}
+
+func witnessesHash(witnesses []common.Address) (hash common.Hash) {
+	hasher := sha3.NewLegacyKeccak256()
+	if err := rlp.Encode(hasher, witnesses); err != nil {
+		panic("can't encode witnesses: " + err.Error())
+	}
+	hasher.(crypto.KeccakState).Read(hash[:])
+	return hash
 }

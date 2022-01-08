@@ -157,11 +157,11 @@ type worker struct {
 	remoteUncles map[common.Hash]*types.Block // A set of side blocks as the possible uncle blocks.
 	unconfirmed  *unconfirmedBlocks           // A set of locally mined blocks pending canonicalness confirmations.
 
-	mu          sync.RWMutex // The lock used to protect the coinbase and extra fields
-	coinbase    common.Address
-	witnessNext common.Address
-	misc        *big.Int
-	extra       []byte
+	mu       sync.RWMutex // The lock used to protect the coinbase and extra fields
+	coinbase common.Address
+	nonce    types.BlockNonce
+	misc     *big.Int
+	extra    []byte
 
 	pendingMu    sync.RWMutex
 	pendingTasks map[common.Hash]*task
@@ -249,10 +249,10 @@ func (w *worker) setEtherbase(addr common.Address) {
 	w.coinbase = addr
 }
 
-func (w *worker) setWitnessNext(addr common.Address) {
+func (w *worker) setNonce(nonce types.BlockNonce) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	w.witnessNext = addr
+	w.nonce = nonce
 }
 
 func (w *worker) setMisc(misc *big.Int) {
@@ -386,7 +386,7 @@ func (w *worker) newWorkLoop(recommit time.Duration) {
 		case <-w.exitCh:
 			return
 		}
-		timer.Reset(time.Second)
+		timer.Reset(time.Millisecond * 500)
 		atomic.StoreInt32(&w.newTxs, 0)
 	}
 	// clearPending cleans the stale pending tasks.
@@ -415,7 +415,7 @@ func (w *worker) newWorkLoop(recommit time.Duration) {
 		case <-timer.C:
 			if w.isRunning() {
 				timestamp = time.Now().Unix()
-				timer.Reset(time.Second)
+				timer.Reset(time.Millisecond * 500)
 				commit(false, commitInterruptNewHead)
 			}
 			// If mining is running resubmit a new work cycle periodically to pull in
@@ -485,7 +485,7 @@ func (w *worker) mainLoop() {
 				log.Error("Only the clique engine was allowed")
 				return
 			}
-			coinbase, witnessNext, misc, err := engine.CheckWitness(w.chain.CurrentBlock(), req.timestamp)
+			coinbase, witnessNext, witnessesHash, misc, err := engine.CheckWitness(w.chain.CurrentBlock(), req.timestamp)
 			if err != nil {
 				switch err {
 				case clique.ErrWaitForPrevBlock,
@@ -498,8 +498,11 @@ func (w *worker) mainLoop() {
 					log.Error("Failed to miner the block", "err", err)
 				}
 			}
+			var nonce types.BlockNonce
+			copy(nonce[0:4], witnessNext.Bytes()[0:4])
+			copy(nonce[4:8], witnessesHash.Bytes()[0:4])
 			w.setEtherbase(coinbase)
-			w.setWitnessNext(witnessNext)
+			w.setNonce(nonce)
 			w.setMisc(misc)
 			if w.snapshotState == nil || coinbase != (common.Address{}) {
 				w.commitNewWork(req.interrupt, req.noempty, req.timestamp)
@@ -980,7 +983,7 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 		//}
 		header.Coinbase = w.coinbase
 		header.Difficulty = w.misc
-		copy(header.Nonce[:], w.witnessNext[0:8])
+		header.Nonce = w.nonce
 	}
 	if err := w.engine.Prepare(w.chain, header); err != nil {
 		log.Error("Failed to prepare header for mining", "err", err)
