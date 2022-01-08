@@ -48,8 +48,6 @@ const (
 	checkpointInterval = 1024 // Number of blocks after which to save the vote snapshot to the database
 	inmemorySnapshots  = 128  // Number of recent vote snapshots to keep in memory
 	inmemorySignatures = 4096 // Number of recent block signatures to keep in memory
-	delayBlocks        = 1
-	cachePeriod        = 1
 )
 
 // Clique proof-of-authority protocol constants.
@@ -63,9 +61,6 @@ var (
 	nonceDropVote = hexutil.MustDecode("0x0000000000000000") // Magic nonce number to vote on removing a signer.
 
 	uncleHash = types.CalcUncleHash(nil) // Always Keccak256(RLP([])) as uncles are meaningless outside of PoW.
-
-	diffInTurn = big.NewInt(2) // Block difficulty for in-turn signatures
-	diffNoTurn = big.NewInt(1) // Block difficulty for out-of-turn signatures
 )
 
 // Various error messages to mark blocks invalid. These should be private to
@@ -77,17 +72,9 @@ var (
 	// that is not part of the local blockchain.
 	errUnknownBlock = errors.New("unknown block")
 
-	// errInvalidCheckpointBeneficiary is returned if a checkpoint/epoch transition
-	// block has a beneficiary set to non-zeroes.
-	errInvalidCheckpointBeneficiary = errors.New("beneficiary in checkpoint block non-zero")
-
 	// errInvalidVote is returned if a nonce value is something else that the two
 	// allowed constants of 0x00..0 or 0xff..f.
 	errInvalidVote = errors.New("vote nonce not 0x00..0 or 0xff..f")
-
-	// errInvalidCheckpointVote is returned if a checkpoint/epoch transition block
-	// has a vote nonce set to non-zeroes.
-	errInvalidCheckpointVote = errors.New("vote nonce in checkpoint block non-zero")
 
 	// errMissingVanity is returned if a block's extra-data section is shorter than
 	// 32 bytes, which is required to store the signer vanity.
@@ -101,26 +88,11 @@ var (
 	// their extra-data fields.
 	errExtraSigners = errors.New("non-checkpoint block contains extra signer list")
 
-	// errInvalidCheckpointSigners is returned if a checkpoint block contains an
-	// invalid list of signers (i.e. non divisible by 20 bytes).
-	errInvalidCheckpointSigners = errors.New("invalid signer list on checkpoint block")
-
-	// errMismatchingCheckpointSigners is returned if a checkpoint block contains a
-	// list of signers different than the one the local node calculated.
-	errMismatchingCheckpointSigners = errors.New("mismatching signer list on checkpoint block")
-
 	// errInvalidMixDigest is returned if a block's mix digest is non-zero.
 	errInvalidMixDigest = errors.New("non-zero mix digest")
 
 	// errInvalidUncleHash is returned if a block contains an non-empty uncle list.
 	errInvalidUncleHash = errors.New("non empty uncle hash")
-
-	// errInvalidDifficulty is returned if the difficulty of a block neither 1 or 2.
-	errInvalidDifficulty = errors.New("invalid difficulty")
-
-	// errWrongDifficulty is returned if the difficulty of a block doesn't match the
-	// turn of the signer.
-	errWrongDifficulty = errors.New("wrong difficulty")
 
 	// errInvalidTimestamp is returned if the timestamp of a block is lower than
 	// the previous block's timestamp + the minimum block period.
@@ -137,13 +109,11 @@ var (
 	// that already signed a header recently, thus is temporarily not allowed to.
 	errRecentlySigned = errors.New("recently signed")
 
-	ErrInvalidBlockWitness      = errors.New("invalid block witness")
-	ErrMinerFutureBlock         = errors.New("miner the future block")
-	ErrWaitForPrevBlock         = errors.New("wait for last block arrived")
-	ErrWaitForRightTime         = errors.New("wait for right time")
-	ErrNilBlockHeader           = errors.New("nil block header returned")
-	ErrMismatchSignerAndWitness = errors.New("mismatch block signer and witness")
-	ErrInvalidMinerBlockTime    = errors.New("invalid time to miner the block")
+	ErrInvalidBlockWitness   = errors.New("invalid block witness")
+	ErrMinerFutureBlock      = errors.New("miner the future block")
+	ErrWaitForPrevBlock      = errors.New("wait for last block arrived")
+	ErrWaitForRightTime      = errors.New("wait for right time")
+	ErrInvalidMinerBlockTime = errors.New("invalid time to miner the block")
 )
 
 // SignerFn hashes and signs the data to be signed by a backing account.
@@ -628,10 +598,6 @@ func (c *Clique) Prepare(chain consensus.ChainHeaderReader, header *types.Header
 
 // Finalize implements consensus.Engine, ensuring no uncles are set.
 func (c *Clique) Finalize(chain consensus.ChainHeaderReader, header *types.Header, state *state.StateDB, txs []*types.Transaction, uncles []*types.Header) {
-	fixedNumber := common.Big0
-	if header.Number.Uint64() >= delayBlocks {
-		fixedNumber = big.NewInt(int64((header.Number.Uint64() - delayBlocks) / cachePeriod * cachePeriod))
-	}
 	// Block reward
 	reward, _ := new(big.Int).SetString("8000000000000000000", 10)
 	state.AddBalance(params.MasternodeContractAddress, reward)
@@ -658,22 +624,20 @@ func (c *Clique) Finalize(chain consensus.ChainHeaderReader, header *types.Heade
 		state.SetState(params.MasternodeContractAddress, balanceMintKey, common.BytesToHash(balanceMint.Bytes()))
 	}
 	// Online check
-	// (header.Time-parent.Time) > 3
-	//
 	parent := chain.GetHeader(header.ParentHash, header.Number.Uint64()-1)
-	if (header.Time - parent.Time) > 3 {
-		fmt.Println("(header.Time-parent.Time) > 3")
+	if (header.Time-parent.Time) > 3 && header.Number.Uint64() > 1 && header.Coinbase != (common.Address{}) {
+		log.Warn("More than 3 seconds", "number", header.Number.String())
 	}
 	if header.Number.Uint64() > 1 &&
 		header.Coinbase != (common.Address{}) &&
 		bytes.Equal(header.Nonce[4:8], parent.Nonce[4:8]) &&
 		!bytes.Equal(header.Coinbase.Bytes()[0:4], parent.Nonce[0:4]) {
-		preNid, err := c.getPreNid(fixedNumber.Uint64(), header.Coinbase)
+		preNid, err := c.getPreNode(parent.Number.Uint64(), header.Coinbase)
 		if err != nil {
-			log.Error("Finalize getPreNid", "Number", header.Number.Uint64(), "ERROR", err.Error())
+			log.Error("Failed to get pre node", "number", header.Number.Uint64(), "error", err.Error())
 			return
 		}
-		log.Warn("Offline detected", "expect", common.Bytes2Hex(parent.Nonce[0:4]), "current", common.Bytes2Hex(header.Coinbase[0:4]))
+		log.Warn("Offline detected", "expect", common.Bytes2Hex(parent.Nonce[0:4]), "current", common.Bytes2Hex(header.Coinbase[0:4]), "number", header.Number.Uint64())
 		blockOnlineKey := getNodeAttrKey(preNid.Bytes()[:], 6)
 		blockOnlineVal := state.GetState(params.MasternodeContractAddress, blockOnlineKey)
 		if blockOnlineVal != (common.Hash{}) {
@@ -881,23 +845,14 @@ func (c *Clique) lookup(now uint64, lastBlock *types.Header) (common.Address, co
 	quotientsLast := lastBlock.Time / c.config.Period
 	quotients := now / c.config.Period
 	if quotientsLast >= quotients {
-		return common.Address{}, common.Address{}, common.Hash{}, big.NewInt(0), fmt.Errorf("[LOOKUP] Invalid Period")
+		return common.Address{}, common.Address{}, common.Hash{}, common.Big0, fmt.Errorf("[LOOKUP] Invalid Period")
 	}
 	if lastBlock.Time > now {
-		return common.Address{}, common.Address{}, common.Hash{}, big.NewInt(0), fmt.Errorf("[LOOKUP] Invalid lastBlock.Time")
+		return common.Address{}, common.Address{}, common.Hash{}, common.Big0, fmt.Errorf("[LOOKUP] Invalid lastBlock.Time")
 	}
-	fixedNumber := uint64(0)
-	if (lastBlock.Number.Uint64() + 1) >= delayBlocks {
-		fixedNumber = (lastBlock.Number.Uint64() + 1 - delayBlocks) / cachePeriod * cachePeriod
-	}
-	if fixedNumber != c.cacheNumber || fixedNumber == 0 {
-		nodes, err := c.masternodeListFn(big.NewInt(int64(fixedNumber)))
-		if err != nil {
-			return common.Address{}, common.Address{}, common.Hash{}, big.NewInt(0), fmt.Errorf("Failed to get masternodes: %s, Number: %d", err, fixedNumber)
-		}
-		c.cacheNumber = fixedNumber
-		c.cacheNodes = nodes
-		c.cacheHash = witnessesHash(nodes)
+	err := c.freshCacheNodes(lastBlock.Number.Uint64())
+	if err != nil {
+		return common.Address{}, common.Address{}, common.Hash{}, common.Big0, err
 	}
 	length := uint64(len(c.cacheNodes))
 	nextNth := quotients % length
@@ -905,9 +860,8 @@ func (c *Clique) lookup(now uint64, lastBlock *types.Header) (common.Address, co
 	if nextNth2 == length {
 		nextNth2 = 0
 	}
-	nth := length*1000 + nextNth
-	index := new(big.Int).Mul(big.NewInt(int64(fixedNumber)), big.NewInt(1000000))
-	index.Add(index, big.NewInt(int64(nth)))
+	index := big.NewInt(int64(length) * 1000000)
+	index.Add(index, big.NewInt(int64(nextNth)))
 	return c.cacheNodes[nextNth], c.cacheNodes[nextNth2], c.cacheHash, index, nil
 }
 
@@ -931,14 +885,10 @@ func (c *Clique) CheckWitness(lastBlock *types.Block, now int64) (common.Address
 	return common.Address{}, common.Address{}, common.Hash{}, big.NewInt(0), ErrInvalidBlockWitness
 }
 
-func (c *Clique) getPreNid(fixedNumber uint64, nid common.Address) (common.Address, error) {
-	if fixedNumber != c.cacheNumber || fixedNumber == 0 {
-		nodes, err := c.masternodeListFn(big.NewInt(int64(fixedNumber)))
-		if err != nil {
-			return common.Address{}, fmt.Errorf("Failed to get masternodes: %s, Number: %d", err, fixedNumber)
-		}
-		c.cacheNumber = fixedNumber
-		c.cacheNodes = nodes
+func (c *Clique) getPreNode(fixedNumber uint64, nid common.Address) (common.Address, error) {
+	err := c.freshCacheNodes(fixedNumber)
+	if err != nil {
+		return common.Address{}, err
 	}
 	nodesLen := int64(len(c.cacheNodes))
 	for i := int64(0); i < nodesLen; i++ {
@@ -950,7 +900,20 @@ func (c *Clique) getPreNid(fixedNumber uint64, nid common.Address) (common.Addre
 			}
 		}
 	}
-	return common.Address{}, fmt.Errorf("Failed to get pre nid: %s, Number: %d", nid.String(), fixedNumber)
+	return common.Address{}, fmt.Errorf("Not found pre node of %s at number %d!", nid.String(), fixedNumber)
+}
+
+func (c *Clique) freshCacheNodes(number uint64) error {
+	if number != c.cacheNumber || number == 0 {
+		nodes, err := c.masternodeListFn(big.NewInt(int64(number)))
+		if err != nil {
+			return fmt.Errorf("Failed to get nodes at number %d!", number)
+		}
+		c.cacheNumber = number
+		c.cacheNodes = nodes
+		c.cacheHash = witnessesHash(nodes)
+	}
+	return nil
 }
 
 func (c *Clique) setSigner(signer common.Address) {
