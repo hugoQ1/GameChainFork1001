@@ -673,7 +673,7 @@ func (c *Clique) Finalize(chain consensus.ChainHeaderReader, header *types.Heade
 			log.Error("Finalize getPreNid", "Number", header.Number.Uint64(), "ERROR", err.Error())
 			return
 		}
-		log.Warn("Offline detected", "expect", common.Bytes2Hex(parent.Nonce[:]), "current", common.Bytes2Hex(header.Nonce[:]), "coinbase", common.Bytes2Hex(header.Coinbase[0:4]))
+		log.Warn("Offline detected", "expect", common.Bytes2Hex(parent.Nonce[0:4]), "current", common.Bytes2Hex(header.Coinbase[0:4]))
 		blockOnlineKey := getNodeAttrKey(preNid.Bytes()[:], 6)
 		blockOnlineVal := state.GetState(params.MasternodeContractAddress, blockOnlineKey)
 		if blockOnlineVal != (common.Hash{}) {
