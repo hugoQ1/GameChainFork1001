@@ -115,4 +115,30 @@ function withdrawMint() public
 #### 4.5 失效节点 (node.status == 2)
 节点对应的创建者发送交易调用节点合约的logout()方法之后，节点失效，开始释放质押币。
 
+## 5. 区块属性修改说明
 
+#### 5.1 Block.Difficulty (big.Int)
+在ETH里Difficulty字段是记录当前区块难度值的，现在修改为记录当前“出块列表”节点数量和当前出块的节点序号。
+
+```
+var length // “出块列表”节点数量
+var index // 轮流出块的当前序号
+
+Block.Difficulty = length * 1000000 + index
+
+// 例如： 21,000,015
+// 表示当前有21个节点参与出块，当前轮到了第15个节点出块
+```
+
+#### 5.1 Block.Nonce ([8]byte)
+在ETH里Block.Nonce是用于PoW挖矿是记录随机数使用的，现在修改为记录下一个出块的节点ID和当前的“出块列表”哈希指，用于检测下一个节点是否正常出块。
+```
+var hash // “出块列表”哈希指（取开头的4字节）
+var nodeId // 下一个出块的节点ID（取开头的4字节）
+
+Block.Nonce = nodeId[0:4] + hash[0:4]
+
+// 例如： 0xd89af0b30466d427
+// 表示下一个出块节点ID的前4字节为：0xd89af0b3
+// 当前“出块列表”哈希指的前4字节为：0x0466d427
+```
