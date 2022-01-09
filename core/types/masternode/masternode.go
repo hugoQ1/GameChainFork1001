@@ -41,14 +41,16 @@ type Masternode struct {
 	Investor      common.Address
 	BlockRegister *big.Int
 	BlockOnline   *big.Int
+	Status        uint8
 }
 
-func newMasternode(id, investor common.Address, blockRegister, blockOnline *big.Int) *Masternode {
+func newMasternode(id, investor common.Address, blockRegister, blockOnline *big.Int, status uint8) *Masternode {
 	return &Masternode{
 		ID:            id,
 		Investor:      investor,
 		BlockRegister: blockRegister,
 		BlockOnline:   blockOnline,
+		Status:        status,
 	}
 }
 
@@ -117,6 +119,9 @@ func getAllIds(contract *contract.Contract, blockNumber *big.Int) ([]common.Addr
 		if err != nil {
 			break
 		}
+		if ctx.Node.Status != 1 {
+			continue
+		}
 		lastNode = ctx.pre
 		ids = append(ids, ctx.Node.ID)
 	}
@@ -136,7 +141,7 @@ func GetMasternodeContext(opts *bind.CallOpts, contract *contract.Contract, id c
 	if err != nil {
 		return &MasternodeContext{}, err
 	}
-	node := newMasternode(id, data.Investor, data.BlockRegister, data.BlockOnline)
+	node := newMasternode(id, data.Investor, data.BlockRegister, data.BlockOnline, data.Status)
 
 	return &MasternodeContext{
 		Node:       node,

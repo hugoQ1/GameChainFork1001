@@ -4,7 +4,6 @@ pragma solidity ^0.8.10;
 contract Masternode {
 
     uint public constant baseCost = 10**18;
-    uint public constant minBlockTimeout = 800;
 
     address public lastNode; // 0
     address public lastOnlineNode; // 1
@@ -27,7 +26,6 @@ contract Masternode {
         uint balancePledge; // 8
         uint balancePledgeDebt; // 9
         uint balanceMint; // 10
-        //uint balanceMintDebt; // 11
     }
 
     mapping (address => node) public nodes; // 7
@@ -119,13 +117,13 @@ contract Masternode {
     }
 
     function getInfo() view public returns (
-        uint lockedBalance,
+        uint totalBalance,
         uint totalNodes,
         uint onlineNodes,
         uint releaseNodes
     )
     {
-        lockedBalance = address(this).balance / (10**18);
+        totalBalance = address(this).balance / (10**18);
         totalNodes = countTotalNode;
         onlineNodes = countOnlineNode;
         releaseNodes = countReleasedNode;
