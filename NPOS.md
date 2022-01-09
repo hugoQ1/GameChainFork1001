@@ -1,5 +1,7 @@
 # NPoS算法介绍
 
+- 区块浏览器（内部测试）：[http://43.132.183.20:4000/](http://43.132.183.20:4000/)
+
 ## 1. 节点合约
 - 合约地址：0x1111111111111111111111111111111111111111
 - 合约代码：[contracts/masternode/contract/masternode.sol](https://github.com/rolong/mychain/blob/main/contracts/masternode/contract/masternode.sol)
