@@ -17,6 +17,7 @@
 package clique
 
 import (
+	"fmt"
 	"math/big"
 	"testing"
 
@@ -28,6 +29,12 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
 )
+
+func TestMyTest(t *testing.T) {
+	i := big.NewInt(123456)
+	x := new(big.Int).Mod(i, big.NewInt(100))
+	fmt.Println(x)
+}
 
 // This test case is a repro of an annoying bug that took us forever to catch.
 // In Clique PoA networks (Rinkeby, Görli, etc), consecutive blocks might have
