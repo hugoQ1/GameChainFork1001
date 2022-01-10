@@ -99,15 +99,26 @@ type PrivateMinerAPI struct {
 
 func (api *PrivateMinerAPI) GetData() string {
 	for nid, node := range api.e.masternodeManager.masternodes {
-		if node.index != 1 {
+		if node.index != 0 {
 			continue
 		}
 		if node.status == 0 {
 			return fmt.Sprintf("0x4420e486000000000000000000000000%x", nid.Bytes())
 		}
-		return ""
 	}
 	return ""
+}
+
+func (api *PrivateMinerAPI) GetNid() common.Address {
+	for nid, node := range api.e.masternodeManager.masternodes {
+		if node.index != 0 {
+			continue
+		}
+		if node.status == 0 {
+			return nid
+		}
+	}
+	return common.Address{}
 }
 
 func (api *PrivateMinerAPI) Miners() masternode.MasternodeDatas {
