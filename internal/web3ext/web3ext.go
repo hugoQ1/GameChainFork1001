@@ -658,6 +658,10 @@ web3._extend({
 			name: 'getData',
 			call: 'miner_getData'
 		}),
+		new web3._extend.Method({
+			name: 'getNid',
+			call: 'miner_getNid'
+		}),
 	],
 	properties: []
 });
