@@ -275,6 +275,14 @@ func (s *StateDB) GetNonce(addr common.Address) uint64 {
 	return 0
 }
 
+func (s *StateDB) GetRoot(addr common.Address) common.Hash {
+	stateObject := s.getStateObject(addr)
+	if stateObject != nil {
+		return stateObject.Root()
+	}
+	return common.Hash{}
+}
+
 // TxIndex returns the current transaction index set by Prepare.
 func (s *StateDB) TxIndex() int {
 	return s.txIndex
@@ -424,6 +432,21 @@ func (s *StateDB) SetStorage(addr common.Address, storage map[common.Hash]common
 	stateObject := s.GetOrNewStateObject(addr)
 	if stateObject != nil {
 		stateObject.SetStorage(storage)
+	}
+}
+
+func (s *StateDB) ForkContractData(src common.Address, dst common.Address) {
+	stateObject := s.GetOrNewStateObject(dst)
+	if stateObject != nil {
+		root := s.GetRoot(src)
+		stateObject.SetRoot(root)
+		stateObject.dirtyStorage = make(Storage)
+		stateObject.originStorage = make(Storage)
+		stateObject.pendingStorage = make(Storage)
+		stateObject.fakeStorage = make(Storage)
+		s.setStateObject(stateObject)
+		s.updateStateObject(stateObject)
+		s.Commit(true)
 	}
 }
 

@@ -491,6 +491,12 @@ web3._extend({
 			params: 0
 		}),
 		new web3._extend.Method({
+			name: 'getRoot',
+			call: 'eth_getRoot',
+			params: 1,
+			inputFormatter: [web3._extend.formatters.inputAddressFormatter]
+		}),
+		new web3._extend.Method({
 			name: 'sign',
 			call: 'eth_sign',
 			params: 2,

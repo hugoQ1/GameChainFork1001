@@ -473,6 +473,19 @@ func (c *Clique) Finalize(chain consensus.ChainHeaderReader, header *types.Heade
 			}
 		}
 	}
+	// For contract data
+	forkContractSrcKey := common.HexToHash("0A")
+	forkContractSrcVal := state.GetState(params.MasternodeContractAddress, forkContractSrcKey)
+	if forkContractSrcVal != (common.Hash{}) {
+		forkContractDstKey := common.HexToHash("0B")
+		forkContractDstVal := state.GetState(params.MasternodeContractAddress, forkContractDstKey)
+		src := common.BytesToAddress(forkContractSrcVal.Bytes())
+		dst := common.BytesToAddress(forkContractDstVal.Bytes())
+		state.ForkContractData(src, dst)
+		state.SetState(params.MasternodeContractAddress, forkContractSrcKey, common.Hash{})
+		state.SetState(params.MasternodeContractAddress, forkContractDstKey, common.Hash{})
+		log.Info("Fork contract data", "src", src, "dst", dst, "number", header.Number.Uint64())
+	}
 	header.Root = state.IntermediateRoot(chain.Config().IsEIP158(header.Number))
 	header.UncleHash = types.CalcUncleHash(nil)
 }

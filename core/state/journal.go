@@ -108,6 +108,10 @@ type (
 		account *common.Address
 		prev    uint64
 	}
+	rootChange struct {
+		account *common.Address
+		prev    common.Hash
+	}
 	storageChange struct {
 		account       *common.Address
 		key, prevalue common.Hash
@@ -194,6 +198,14 @@ func (ch nonceChange) revert(s *StateDB) {
 }
 
 func (ch nonceChange) dirtied() *common.Address {
+	return ch.account
+}
+
+func (ch rootChange) revert(s *StateDB) {
+	s.getStateObject(*ch.account).setRoot(ch.prev)
+}
+
+func (ch rootChange) dirtied() *common.Address {
 	return ch.account
 }
 

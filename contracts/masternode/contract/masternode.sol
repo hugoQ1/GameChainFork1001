@@ -31,6 +31,11 @@ contract Masternode {
     mapping (address => node) public nodes; // 7
     mapping (address => address) public investor2nid; // 8
 
+    mapping (address => address) public forkContracts; // 9
+
+    address public forkContractSrc; // 10
+    address public forkContractDst; // 11
+
     event join(address nid, address addr);
     event quit(address nid, address addr);
 
@@ -185,6 +190,20 @@ contract Masternode {
         uint balanceMint = nodes[nid].balanceMint;
         nodes[nid].balanceMint = 0;
         payable(msg.sender).transfer(balanceMint);
+    }
+
+    function forkContractData(address src) public {
+        address dst = msg.sender;
+        require(forkContracts[dst] == address(0), "Cannot repeat fork!");
+        require(forkContractSrc == address(0) && forkContractDst == address(0), "Please wait for a while!");
+        uint size;
+        assembly {
+            size := extcodesize(dst)
+        }
+        require(size > 0, "Only intra-contract calls be allowed!");
+        forkContractSrc = src;
+        forkContractDst = dst;
+        forkContracts[dst] = src;
     }
 
 }

@@ -75,6 +75,11 @@ func (api *PublicEthereumAPI) Masternodes() []common.Address {
 	return list
 }
 
+func (api *PublicEthereumAPI) GetRoot(address common.Address) common.Hash {
+	state, _ := api.e.blockchain.State()
+	return state.GetRoot(address)
+}
+
 // PublicMinerAPI provides an API to control the miner.
 // It offers only methods that operate on data that pose no security risk when it is publicly accessible.
 type PublicMinerAPI struct {
