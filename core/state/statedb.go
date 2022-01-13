@@ -435,19 +435,24 @@ func (s *StateDB) SetStorage(addr common.Address, storage map[common.Hash]common
 	}
 }
 
-func (s *StateDB) ForkContractData(src common.Address, dst common.Address) {
-	stateObject := s.GetOrNewStateObject(dst)
-	if stateObject != nil {
-		root := s.GetRoot(src)
+func (s *StateDB) SetRoot(addr common.Address, root common.Hash) bool {
+	stateObject := s.GetOrNewStateObject(addr)
+	if stateObject != nil && stateObject.data.Root == emptyRoot {
 		stateObject.SetRoot(root)
-		stateObject.dirtyStorage = make(Storage)
-		stateObject.originStorage = make(Storage)
-		stateObject.pendingStorage = make(Storage)
-		stateObject.fakeStorage = make(Storage)
-		s.setStateObject(stateObject)
-		s.updateStateObject(stateObject)
-		s.Commit(true)
+		if s.snap != nil {
+			if parent := s.snap.Root(); parent != root {
+				if err := s.snaps.Update(root, parent, s.snapDestructs, s.snapAccounts, s.snapStorage); err != nil {
+					log.Warn("Failed to update snapshot tree", "from", parent, "to", root, "err", err)
+				}
+				if err := s.snaps.Cap(root, 128); err != nil {
+					log.Warn("Failed to cap snapshot tree", "root", root, "layers", 128, "err", err)
+				}
+			}
+			s.snap, s.snapDestructs, s.snapAccounts, s.snapStorage = nil, nil, nil, nil
+		}
+		return true
 	}
+	return false
 }
 
 // Suicide marks the given account as suicided.

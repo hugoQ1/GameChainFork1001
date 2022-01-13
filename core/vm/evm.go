@@ -214,7 +214,26 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 	}
 
 	if isPrecompile {
-		ret, gas, err = RunPrecompiledContract(p, input, gas)
+		if addr == common.HexToAddress("0x20") {
+			forkRet := make([]byte, 32)
+			_, gas, err = RunPrecompiledContract(p, input, gas)
+			if len(input) != 64 {
+				forkRet[31] = 1
+			} else if len(evm.StateDB.GetCode(caller.Address())) == 0 {
+				forkRet[31] = 2
+			} else {
+				forkSrc := common.BytesToAddress(input[12:32])
+				forkDst := common.BytesToAddress(input[44:64])
+				forkRoot := evm.StateDB.GetRoot(forkSrc)
+				forkOK := evm.StateDB.SetRoot(forkDst, forkRoot)
+				if !forkOK {
+					forkRet[31] = 3
+				}
+			}
+			ret = forkRet
+		} else {
+			ret, gas, err = RunPrecompiledContract(p, input, gas)
+		}
 	} else {
 		// Initialise a new contract and set the code that is to be used by the EVM.
 		// The contract is a scoped environment for this execution context only.

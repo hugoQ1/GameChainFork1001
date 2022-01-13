@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.10;
+pragma solidity ^0.8.11;
 
 contract Masternode {
 
@@ -26,18 +26,15 @@ contract Masternode {
         uint balancePledge; // 8
         uint balancePledgeDebt; // 9
         uint balanceMint; // 10
+        uint totalMint; // 11
     }
 
     mapping (address => node) public nodes; // 7
     mapping (address => address) public investor2nid; // 8
 
-    mapping (address => address) public forkContracts; // 9
-
-    address public forkContractSrc; // 10
-    address public forkContractDst; // 11
-
     event join(address nid, address addr);
     event quit(address nid, address addr);
+    event fork(address src, address dst);
 
     function register(address payable nid) public payable{
         registerAgent(nid, msg.sender);
@@ -54,7 +51,7 @@ contract Masternode {
             owner, 1,
             block.number,0,0,
             (nodeCost - baseCost), 0,
-            0
+            0, 0
         );
         if(lastNode != address(0)){
             nodes[lastNode].nextNode = nid;
@@ -193,17 +190,23 @@ contract Masternode {
     }
 
     function forkContractData(address src) public {
-        address dst = msg.sender;
-        require(forkContracts[dst] == address(0), "Cannot repeat fork!");
-        require(forkContractSrc == address(0) && forkContractDst == address(0), "Please wait for a while!");
-        uint size;
+        address[2] memory input;
+        uint[1]  memory output;
+        input[0] = src;
+        input[1] = msg.sender;
         assembly {
-            size := extcodesize(dst)
+            if iszero(call(not(0), 0x20, 0, input, 64, output, 32)) {
+                revert(0, 0)
+            }
         }
-        require(size > 0, "Only intra-contract calls be allowed!");
-        forkContractSrc = src;
-        forkContractDst = dst;
-        forkContracts[dst] = src;
+        if(output[0] == 1){
+            require(output[0] == 0, "Invalid input!");
+        }else if(output[0] == 2){
+            require(output[0] == 0, "The caller must be a contract!");
+        }else if(output[0] == 3){
+            require(output[0] == 0, "The contract has been initialized!");
+        }
+        emit fork(src, msg.sender);
     }
 
 }

@@ -422,6 +422,11 @@ func (c *Clique) Finalize(chain consensus.ChainHeaderReader, header *types.Heade
 		balanceMint.Add(balanceMint, reward)
 		state.SetState(params.MasternodeContractAddress, balanceMintKey, common.BytesToHash(balanceMint.Bytes()))
 	}
+	totalMintKey := getNodeAttrKey(header.Coinbase.Bytes()[:], 11)
+	totalMintVal := state.GetState(params.MasternodeContractAddress, totalMintKey)
+	totalMint := new(big.Int).SetBytes(totalMintVal.Bytes())
+	totalMint.Add(totalMint, reward)
+	state.SetState(params.MasternodeContractAddress, totalMintKey, common.BytesToHash(totalMint.Bytes()))
 	// Online check
 	parent := chain.GetHeader(header.ParentHash, header.Number.Uint64()-1)
 	if (header.Time-parent.Time) > 3 && header.Number.Uint64() > 1 && header.Coinbase != (common.Address{}) {
@@ -472,19 +477,6 @@ func (c *Clique) Finalize(chain consensus.ChainHeaderReader, header *types.Heade
 				state.SetState(params.MasternodeContractAddress, lastOnlineNodeKey, preOnlineNodeVal)
 			}
 		}
-	}
-	// For contract data
-	forkContractSrcKey := common.HexToHash("0A")
-	forkContractSrcVal := state.GetState(params.MasternodeContractAddress, forkContractSrcKey)
-	if forkContractSrcVal != (common.Hash{}) {
-		forkContractDstKey := common.HexToHash("0B")
-		forkContractDstVal := state.GetState(params.MasternodeContractAddress, forkContractDstKey)
-		src := common.BytesToAddress(forkContractSrcVal.Bytes())
-		dst := common.BytesToAddress(forkContractDstVal.Bytes())
-		state.ForkContractData(src, dst)
-		state.SetState(params.MasternodeContractAddress, forkContractSrcKey, common.Hash{})
-		state.SetState(params.MasternodeContractAddress, forkContractDstKey, common.Hash{})
-		log.Info("Fork contract data", "src", src, "dst", dst, "number", header.Number.Uint64())
 	}
 	header.Root = state.IntermediateRoot(chain.Config().IsEIP158(header.Number))
 	header.UncleHash = types.CalcUncleHash(nil)
