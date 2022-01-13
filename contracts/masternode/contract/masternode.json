@@ -196,6 +196,11 @@
       },
       {
         "internalType": "uint256",
+        "name": "totalMint",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
         "name": "pendingAsset",
         "type": "uint256"
       },

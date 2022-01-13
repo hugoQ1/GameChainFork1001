@@ -133,6 +133,7 @@ contract Masternode {
 
     function getReleaseInfo(address addr) view public returns (
         uint balanceMint,
+        uint totalMint,
         uint pendingAsset,
         uint lockedAsset,
         uint releaseTime
@@ -140,6 +141,7 @@ contract Masternode {
     {
         address nid = investor2nid[addr];
         balanceMint = nodes[nid].balanceMint;
+        totalMint = nodes[nid].totalMint;
         if(nodes[nid].status == 2){
             pendingAsset = pendingCalc(nid);
             lockedAsset = nodes[nid].balancePledge - nodes[nid].balancePledgeDebt - pendingAsset;
