@@ -132,7 +132,7 @@ func (api *PrivateMinerAPI) Miners() masternode.MasternodeDatas {
 		key := api.e.masternodeManager.masternodeKeys[nid]
 		var data string = ""
 		var note string = "MISSING"
-		if node.isActive {
+		if node.status == 1 {
 			note = "ENABLED"
 		}
 		if node.status == 0 {
