@@ -525,8 +525,20 @@ func (s *stateObject) SetNonce(nonce uint64) {
 	s.setNonce(nonce)
 }
 
+func (s *stateObject) SetRoot(root common.Hash) {
+	s.db.journal.append(rootChange{
+		account: &s.address,
+		prev:    s.data.Root,
+	})
+	s.setRoot(root)
+}
+
 func (s *stateObject) setNonce(nonce uint64) {
 	s.data.Nonce = nonce
+}
+
+func (s *stateObject) setRoot(root common.Hash) {
+	s.data.Root = root
 }
 
 func (s *stateObject) CodeHash() []byte {
@@ -539,6 +551,10 @@ func (s *stateObject) Balance() *big.Int {
 
 func (s *stateObject) Nonce() uint64 {
 	return s.data.Nonce
+}
+
+func (s *stateObject) Root() common.Hash {
+	return s.data.Root
 }
 
 // Never called, but must be present to allow stateObject to be used

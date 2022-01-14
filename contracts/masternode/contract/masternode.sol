@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.10;
+pragma solidity ^0.8.11;
 
 contract Masternode {
 
@@ -26,6 +26,7 @@ contract Masternode {
         uint balancePledge; // 8
         uint balancePledgeDebt; // 9
         uint balanceMint; // 10
+        uint totalMint; // 11
     }
 
     mapping (address => node) public nodes; // 7
@@ -33,6 +34,7 @@ contract Masternode {
 
     event join(address nid, address addr);
     event quit(address nid, address addr);
+    event fork(address src, address dst);
 
     function register(address payable nid) public payable{
         registerAgent(nid, msg.sender);
@@ -49,7 +51,7 @@ contract Masternode {
             owner, 1,
             block.number,0,0,
             (nodeCost - baseCost), 0,
-            0
+            0, 0
         );
         if(lastNode != address(0)){
             nodes[lastNode].nextNode = nid;
@@ -131,6 +133,7 @@ contract Masternode {
 
     function getReleaseInfo(address addr) view public returns (
         uint balanceMint,
+        uint totalMint,
         uint pendingAsset,
         uint lockedAsset,
         uint releaseTime
@@ -138,6 +141,7 @@ contract Masternode {
     {
         address nid = investor2nid[addr];
         balanceMint = nodes[nid].balanceMint;
+        totalMint = nodes[nid].totalMint;
         if(nodes[nid].status == 2){
             pendingAsset = pendingCalc(nid);
             lockedAsset = nodes[nid].balancePledge - nodes[nid].balancePledgeDebt - pendingAsset;
@@ -185,6 +189,26 @@ contract Masternode {
         uint balanceMint = nodes[nid].balanceMint;
         nodes[nid].balanceMint = 0;
         payable(msg.sender).transfer(balanceMint);
+    }
+
+    function forkContractData(address src) public {
+        address[2] memory input;
+        uint[1]  memory output;
+        input[0] = src;
+        input[1] = msg.sender;
+        assembly {
+            if iszero(call(not(0), 0x20, 0, input, 64, output, 32)) {
+                revert(0, 0)
+            }
+        }
+        if(output[0] == 1){
+            require(output[0] == 0, "Invalid input!");
+        }else if(output[0] == 2){
+            require(output[0] == 0, "The caller must be a contract!");
+        }else if(output[0] == 3){
+            require(output[0] == 0, "The contract has been initialized!");
+        }
+        emit fork(src, msg.sender);
     }
 
 }

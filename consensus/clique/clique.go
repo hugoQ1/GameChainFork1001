@@ -422,6 +422,11 @@ func (c *Clique) Finalize(chain consensus.ChainHeaderReader, header *types.Heade
 		balanceMint.Add(balanceMint, reward)
 		state.SetState(params.MasternodeContractAddress, balanceMintKey, common.BytesToHash(balanceMint.Bytes()))
 	}
+	totalMintKey := getNodeAttrKey(header.Coinbase.Bytes()[:], 11)
+	totalMintVal := state.GetState(params.MasternodeContractAddress, totalMintKey)
+	totalMint := new(big.Int).SetBytes(totalMintVal.Bytes())
+	totalMint.Add(totalMint, reward)
+	state.SetState(params.MasternodeContractAddress, totalMintKey, common.BytesToHash(totalMint.Bytes()))
 	// Online check
 	parent := chain.GetHeader(header.ParentHash, header.Number.Uint64()-1)
 	if (header.Time-parent.Time) > 3 && header.Number.Uint64() > 1 && header.Coinbase != (common.Address{}) {
