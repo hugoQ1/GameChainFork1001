@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"errors"
-	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/contracts/masternode/contract"
@@ -13,9 +12,9 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/eth/downloader"
 	"github.com/ethereum/go-ethereum/event"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/params"
-	"log"
 	"math/big"
 	"sync"
 	"sync/atomic"
@@ -27,9 +26,7 @@ var (
 )
 
 type Masternode struct {
-	index    int
-	isActive bool
-
+	index         int
 	investor      common.Address
 	status        uint8
 	blockRegister uint64
@@ -37,30 +34,19 @@ type Masternode struct {
 }
 
 type MasternodeManager struct {
-	// channels for fetcher, syncer, txsyncLoop
-	IsMasternode    uint32
-	srvr            *p2p.Server
+	eth             *Ethereum
 	contractBackend *ContractBackend
 	contract        *contract.Contract
-
-	mux *event.TypeMux
-	eth *Ethereum
-
-	syncing int32
-
-	mu          sync.RWMutex
-	rw          sync.RWMutex
-	ID          string
-	NodeAccount common.Address
-	PrivateKey  *ecdsa.PrivateKey
-
-	masternodeKeys map[common.Address]*ecdsa.PrivateKey
-	masternodes    map[common.Address]*Masternode
+	mux             *event.TypeMux
+	rw              sync.RWMutex
+	syncing         int32
+	masternodeKeys  map[common.Address]*ecdsa.PrivateKey
+	masternodes     map[common.Address]*Masternode
 }
 
 func NewMasternodeManager(eth *Ethereum) (*MasternodeManager, error) {
 	contractBackend := NewContractBackend(eth)
-	contract1, err := contract.NewContract(params.MasternodeContractAddress, contractBackend)
+	contract, err := contract.NewContract(params.MasternodeContractAddress, contractBackend)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +54,7 @@ func NewMasternodeManager(eth *Ethereum) (*MasternodeManager, error) {
 	manager := &MasternodeManager{
 		eth:             eth,
 		contractBackend: contractBackend,
-		contract:        contract1,
+		contract:        contract,
 		masternodeKeys:  make(map[common.Address]*ecdsa.PrivateKey, params.MasternodeKeyCount),
 		masternodes:     make(map[common.Address]*Masternode, params.MasternodeKeyCount),
 		syncing:         0,
@@ -76,23 +62,16 @@ func NewMasternodeManager(eth *Ethereum) (*MasternodeManager, error) {
 	return manager, nil
 }
 
-func (self *MasternodeManager) Clear() {
-	self.mu.Lock()
-	defer self.mu.Unlock()
-
-}
-
 func (self *MasternodeManager) Start(srvr *p2p.Server, mux *event.TypeMux) {
 	self.mux = mux
-	log.Println("MasternodeManqager start ")
+	log.Info("Start masternode manqager!")
 	for i, key := range srvr.Config.MasternodeKeys {
 		id := crypto.PubkeyToAddress(key.PublicKey)
 		account := self.newMasternode(i)
 		self.masternodes[id] = account
 		self.masternodeKeys[id] = key
-		self.activeMasternode(id)
+		self.updateMasternodeFromContract(id)
 	}
-	self.srvr = srvr
 	go self.masternodeLoop()
 	go self.checkSyncing()
 }
@@ -103,15 +82,13 @@ func (self *MasternodeManager) SetMinerKey(index int, key *ecdsa.PrivateKey) (bo
 		if account.index == index {
 			delete(self.masternodes, id)
 			delete(self.masternodeKeys, id)
-
-			if account.isActive {
-				fmt.Println("Note: The active masternode(", id, ") was replaced!")
+			if account.status == 1 {
+				log.Warn("Active masternode be replaced!", "nid", id)
 			}
-
 			account := self.newMasternode(index)
 			self.masternodes[addr] = account
 			self.masternodeKeys[addr] = key
-			self.activeMasternode(addr)
+			self.updateMasternodeFromContract(addr)
 			return true, id
 		}
 	}
@@ -197,38 +174,38 @@ func (self *MasternodeManager) masternodeLoop() {
 		select {
 		case err := <-joinSub.Err():
 			joinSub.Unsubscribe()
-			fmt.Println("eventJoin err", err.Error())
+			log.Error("Event Join", "error", err.Error())
 		case err := <-quitSub.Err():
 			quitSub.Unsubscribe()
-			fmt.Println("eventQuit err", err.Error())
+			log.Error("Event Quit", "error", err.Error())
 		case join := <-joinCh:
 			if _, ok := self.masternodes[join.Nid]; ok {
-				self.activeMasternode(join.Nid)
+				self.updateMasternodeFromContract(join.Nid)
 			}
 		case quit := <-quitCh:
-			if account, ok := self.masternodes[quit.Nid]; ok {
-				fmt.Printf("### [%x] Remove masternode! \n", quit.Nid)
-				account.isActive = false
+			if _, ok := self.masternodes[quit.Nid]; ok {
+				log.Warn("Remove masternode!", "nid", quit.Nid.String())
+				self.updateMasternodeFromContract(quit.Nid)
 			}
 		case <-ping.C:
-			logTime := time.Now().Format("[2006-01-02 15:04:05]")
 			ping.Reset(60 * time.Second)
 			if atomic.LoadInt32(&self.syncing) == 1 {
-				fmt.Println(logTime, " syncing...")
+				log.Warn("Syncing ...")
 				break
 			}
 			if !self.eth.IsMining() {
 				self.eth.StartMining(0)
+				log.Warn("StartMining ...")
 			}
 			stateDB, _ := self.eth.blockchain.State()
 			for nid, _ := range self.masternodes {
-				self.activeMasternode(nid)
+				self.updateMasternodeFromContract(nid)
 				account := self.masternodes[nid]
-				if account.isActive && account.status == 1 && account.blockOnline == 0 {
+				if account.status == 1 && account.blockOnline == 0 {
 					ctx := context.Background()
 					gasTipCap, err := self.eth.APIBackend.gpo.SuggestTipCap(ctx)
 					if err != nil {
-						fmt.Println("SuggestTipCap error:", err)
+						log.Error("SuggestTipCap for transaction", "error", err.Error())
 						continue
 					}
 					//msg := ethereum.CallMsg{
@@ -249,9 +226,8 @@ func (self *MasternodeManager) masternodeLoop() {
 					)
 					gas := uint64(200000)
 					fee := new(big.Int).Mul(big.NewInt(int64(gas)), gasFeeCap)
-					fmt.Println("Gas:", gas, "gasTipCap:", gasTipCap.String(), "gasFeeCap:", gasFeeCap.String(), "fee:", fee.String())
 					if stateDB.GetBalance(nid).Cmp(fee) < 0 {
-						fmt.Println(logTime, "Insufficient balance for ping transaction.", nid.Hex(), self.eth.blockchain.CurrentBlock().Number().String(), stateDB.GetBalance(nid).String())
+						log.Error("Insufficient balance for transaction.", nid.Hex(), "fee", fee, "balance", stateDB.GetBalance(nid).String())
 						continue
 					}
 					baseTx := &types.DynamicFeeTx{
@@ -266,29 +242,26 @@ func (self *MasternodeManager) masternodeLoop() {
 					tx := types.NewTx(baseTx)
 					signed, err := types.SignTx(tx, types.NewLondonSigner(self.eth.blockchain.Config().ChainID), self.masternodeKeys[nid])
 					if err != nil {
-						fmt.Println(logTime, "Contract Fallback error:", err)
+						log.Error("Contract fallback", "error", err.Error())
 						continue
 					}
 					if err := self.eth.txPool.AddLocal(signed); err != nil {
-						fmt.Println(logTime, "send ping to txpool error:", err)
+						log.Error("Add transaction to pool", "error", err.Error())
 						continue
 					}
-					fmt.Printf("%s [%s] Heartbeat\n", logTime, nid.String())
-				} else {
-					self.activeMasternode(nid)
+					log.Warn("Send transaction for online", "nid", nid.String())
 				}
 			}
 		}
 	}
 }
 
-func (self *MasternodeManager) activeMasternode(id common.Address) {
+func (self *MasternodeManager) updateMasternodeFromContract(id common.Address) {
 	node, err := self.contract.Nodes(nil, id)
 	if err != nil {
-		fmt.Println("[MN] activeMasternode Error:", err)
+		log.Error("Update masternode from contract", "error", err.Error())
 		return
 	}
-	self.masternodes[id].isActive = node.Status == 1
 	if node.Status > 0 {
 		self.masternodes[id].investor = node.Investor
 		self.masternodes[id].status = node.Status

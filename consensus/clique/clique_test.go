@@ -17,6 +17,7 @@
 package clique
 
 import (
+	"fmt"
 	"math/big"
 	"testing"
 
@@ -28,6 +29,23 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
 )
+
+func TestMisc(t *testing.T) {
+	// blocks := 3600 / 3 * 24 * 365 * 6 // 6年
+	blocks := 3600 / 3 * 24 * 365 * 1
+	// 0.999999989
+	// 0.0000011 %
+	// fmt.Println(math.Pow(0.999999989, 3600/3*24*365*6))
+	// 0.499677690991585
+	// 50,000,000
+	totalRewards := 0.0
+	blockReward := 1.0992914
+	for i := 0; i < blocks; i++ {
+		blockReward *= 0.999999989
+		totalRewards += blockReward
+	}
+	fmt.Println(blockReward, totalRewards)
+}
 
 // This test case is a repro of an annoying bug that took us forever to catch.
 // In Clique PoA networks (Rinkeby, Görli, etc), consecutive blocks might have

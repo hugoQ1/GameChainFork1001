@@ -67,10 +67,10 @@ var Investors = []string{
 }
 
 // MainnetBootnodes are the enode URLs of the P2P bootstrap nodes running on
-// the main Ethereum network.
+// the main Gamechain network.
 var MainnetBootnodes = []string{
-	// Ethereum Foundation Go Bootnodes
 	"enode://54c93b44e867b9196930718f550c54122adac2037a456e1d8e8a0d8a2b0f08c828441636d21bcea1a5b82c3db8cd677f336709d209bc13ce52598e0f240ba150@101.32.177.140:37303",
+	"enode://3ac386e51e1d7d5bbb0fde511617236b8c51e63e90a9a2f4edbece30fff67bd0a8db6df214080645a3d6ab59bb94bbe94bc81d7692b0bce0878dd1129756248f@18.162.115.27:37303",
 }
 
 // RopstenBootnodes are the enode URLs of the P2P bootstrap nodes running on the
