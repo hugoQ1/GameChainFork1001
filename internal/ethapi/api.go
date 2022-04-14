@@ -625,11 +625,18 @@ func (s *PublicBlockChainAPI) BlockNumber() hexutil.Uint64 {
 // given block number. The rpc.LatestBlockNumber and rpc.PendingBlockNumber meta
 // block numbers are also allowed.
 func (s *PublicBlockChainAPI) GetBalance(ctx context.Context, address common.Address, blockNrOrHash rpc.BlockNumberOrHash) (*hexutil.Big, error) {
+	fmt.Printf("hdebug1, address = %v, blockNrOrHash = %v\n", address, blockNrOrHash)
 	state, _, err := s.b.StateAndHeaderByNumberOrHash(ctx, blockNrOrHash)
 	if state == nil || err != nil {
 		return nil, err
 	}
 	return (*hexutil.Big)(state.GetBalance(address)), state.Error()
+}
+
+// for test
+func (s *PublicBlockChainAPI) GetForking(ctx context.Context, rate uint64) uint64 {
+	fmt.Printf("hdebug1, rate = %v\n", rate)
+	return rate + 1
 }
 
 // Result structs for GetProof
